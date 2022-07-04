@@ -6,7 +6,7 @@
 int main()
 {
     pugi::xml_document doc;
-    pugi::xml_parse_result result = doc.load_file("xml-files/ArtificialSudoku4x4.xml");
+    pugi::xml_parse_result result = doc.load_file("xml-files/USAWestside2009.xml");
     if (!result)
         return -1;
 

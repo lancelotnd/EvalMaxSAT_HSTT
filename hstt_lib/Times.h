@@ -16,33 +16,54 @@ class Time {
     std::string id;
     std::string ref_day;
     std::vector<std::string> ref_timegroups;
+
+
+
+public: Time(pugi::xml_node t){
+        id = t.attribute("Id").as_string();
+        name = t.child("Name").child_value();
+        ref_day = t.child("Day").attribute("Reference").as_string();
+
+        for(pugi::xml_node tg : t.child("TimeGroups").children()){
+            ref_timegroups.push_back(tg.attribute("Reference").as_string());
+        }
+    }
+
+    void printTime() {
+        std::cout << id << " : " << name << ", " << ref_day << std::endl;
+        for(auto e :ref_timegroups) {
+            std::cout << "> " << e << std::endl;
+        }
+        std::cout << "-------------------------" << std::endl;
+    }
 };
 
 
 class Times {
-    //We have an array of timegroups
     std::map<std::string,std::string> timegroups;
-    //And an array of time.
     std::vector<Time> times;
 
-
 public : Times(pugi::xml_node times_node){
-            for(pugi::xml_node tg : times_node.child("TimeGroups").children()){
-                std::string id = tg.attribute("Id").as_string();
-                std::string name = tg.child("Name").child_value();
-                addTimegroup(id, name);
-            }
 
             for(pugi::xml_node t : times_node.child("Times").children()){
-                std::cout << t.name() << std::endl;
+                if((std::string)t.name() == "Time"){
+                    addTime(t);
+                } else if ( (std::string) t.name() == "TimeGroups") {
+                    for(pugi::xml_node tg : t.children()){
+                        addTimegroup(tg);
+                    }
+                }
         }
-        }
+}
 
-    void addTime(Time t){
+    void addTime(pugi::xml_node time_node){
+        Time t = Time(time_node);
         times.push_back(t);
     }
 
-    void addTimegroup(std::string id, std::string name){
+    void addTimegroup(pugi::xml_node tg){
+        std::string id = tg.attribute("Id").as_string();
+        std::string name = tg.child("Name").child_value();
         timegroups[id] = name;
     }
 };
