@@ -8,7 +8,7 @@
  */
 #include <vector>
 #include <map>
-
+#include "../pugixml-1.12/src/pugixml.hpp"
 
 
 class Time {
@@ -22,9 +22,21 @@ class Time {
 class Times {
     //We have an array of timegroups
     std::map<std::string,std::string> timegroups;
-
     //And an array of time.
     std::vector<Time> times;
+
+
+public : Times(pugi::xml_node times_node){
+            for(pugi::xml_node tg : times_node.child("TimeGroups").children()){
+                std::string id = tg.attribute("Id").as_string();
+                std::string name = tg.child("Name").child_value();
+                addTimegroup(id, name);
+            }
+
+            for(pugi::xml_node t : times_node.child("Times").children()){
+                std::cout << t.name() << std::endl;
+        }
+        }
 
     void addTime(Time t){
         times.push_back(t);
