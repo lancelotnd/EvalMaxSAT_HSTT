@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string.h>
 #include "hstt_lib/Times.h"
+#include "hstt_lib/Resources.h"
 
 int main()
 {
@@ -13,5 +14,6 @@ int main()
     for (pugi::xml_node instance: doc.child("HighSchoolTimetableArchive").child("Instances").children("Instance"))
     {
         Times t = Times(instance);
+        Resources r = Resources(instance);
     }
 }
