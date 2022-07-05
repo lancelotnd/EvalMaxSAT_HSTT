@@ -1,36 +1,99 @@
 /**
 * The Events section contains 3 entities:
  * EventGroups, Courses and Events. Courses are special EventGroups.
- * An Event has a property Course. At all other places Courses are referred to as EventGroup.
- * Obviously, an EventGroup is simply a set of Events.
- * Now what is an Event? This question has two answers in XHSTT.
- * The first answer is that an Event is a lesson of a fixed Duration.
- * Hence our timetabling problem is to set a begin Time to events, which implies that the Event is planned to this Time,
- * and some consecutive Times if the Duration exceeds 1.
- * Since an Event has (can have) Resources attached to it,
- * these Resources are now busy at these Times. Here we meet the 2 basic requirements in timetabling
- * , which are made explicit as constraint in XHSTT: we need to assign a (begin)Time to each Event (AssignTimeConstraint)
- * and we have to make sure that Resources are not planned double (AvoidClashesConstraint).
- * Some datasets have only these constraints, see the artificial datasets (all except the Sudoku).
- * The other interpretation of Event is slightly more complicated:
- * an Event can represent all lessons with exactly the same properties, i.e. a course.
- * These properties are for example the Resources class and teacher.
- * In this case the duration is the total Duration required for this class-teacher combination.
- * So now a part of the planning problem is to divide the "instance" Event in "solution" Events; here the "solution"
- * Events are the lessons in the first interpretation. To know which interpretation is valid, a dataset with Events of
- * Durations greater than 1 will contain one or more SplitEventsConstraints, explaining how the "instance" event can be
- * divided into "solution" events. If these constraints don't give enough details,
- * one can add DistributeSplitEventsConstraints to control the number of "solution" Events of a certain Duration.
- * An example of the first interpretation is FinlandArtificialSchool.
- * Note that SplitEventsConstraint has MinimumAmount=1 and MaximumAmount=1,
- * which means that the "instance" Event should lead to exactly 1 "solution" Event.
- * An example of the second interpretation is BrazilInstance1. Here MinimumAmount=1 and MaximumAmount=999,
- * so we can split the "instance" Event to as many "solution" Events as you wish.
- * Since the summed Durations of the "solution" Events must be the Duration of the "instance" Event
- * (otherwise the solution is marked invalid by HSEval), this total Duration is an upper bound for the number of
- * "solution" Events. Note that in BrazilInstance1 MinimumDuration=1 and MaximumDuration=2, implying that "solution"
- * Events should have Duration 1 or 2. In BrazilInstance1 there is also several DistributeSplitEventsConstraints,
- * which express that for some Events we need at least one or two lessons of Duration 2.
 */
+
+#include <vector>
+#include <map>
+#include "../pugixml-1.12/src/pugixml.hpp"
+
+
+struct ResourceEvent {
+    std::string res_ref;
+    std::string role;
+    std::string res_type_ref;
+};
+
+class Event {
+    int duration;
+    std::string name;
+    std::string id;
+    std::string course_ref;
+    std::vector<std::string> event_groups_ref;
+    std::vector<ResourceEvent> resources;
+
+public: Event(pugi::xml_node e){
+        id = e.attribute("Id").as_string();
+        name = e.child("Name").child_value();
+        duration = std::stoi(e.child("Duration").child_value());
+        course_ref = e.child("Course").attribute("Reference").as_string();
+
+        for(pugi::xml_node eg: e.child("EventGroups").children()){
+            event_groups_ref.push_back(eg.attribute("Reference").as_string());
+        }
+
+        for(pugi::xml_node r: e.child("Resources").children()){
+            ResourceEvent res;
+            res.res_ref = r.attribute("Reference").as_string();
+            res.role = r.child("Role").child_value();
+            res.res_type_ref = r.child("ResourceType").attribute("Reference").as_string();
+            resources.push_back(res);
+        }
+    }
+
+    Event(){
+    }
+
+    std::string getId(){
+        return id;
+    }
+
+    void printEvent() {
+        std::cout << id << " : " << name << std::endl;
+        std::cout << "Duration : " << duration << " | Course ref : " << course_ref << std::endl;
+        std::cout << "-- Resources --" << std::endl;
+        for(auto r : resources) {
+            std::cout << "> " << r.res_ref << " : " << r.role << " " << r.res_type_ref << std::endl;
+        }
+        std::cout << "-- EventGroups --" << std::endl;
+        for(auto r : event_groups_ref) {
+            std::cout << ">> " << r << std::endl;
+        }
+        std::cout << "------------------------------" << std::endl;
+    }
+
+};
+
+class Events {
+    std::map<std::string, std::string> event_groups;
+    std::map<std::string, Event> map_events;
+
+
+public: Events(pugi::xml_node events_node){
+        for(pugi::xml_node e : events_node.child("Events").children()){
+            if ((std::string) e.name() == "EventGroups"){
+                addEventGroups(e);
+            }
+            else if ((std::string) e.name() == "Event"){
+                addEvent(e);
+            }
+
+        }
+    }
+
+    void addEventGroups(pugi::xml_node groups){
+        for(pugi::xml_node g:groups.children()){
+            std::string id = g.attribute("Id").as_string();
+            std::string name = g.child("Name").child_value();
+            event_groups[id] = name;
+        }
+    }
+
+    void addEvent(pugi::xml_node event_node){
+        Event e = Event(event_node);
+        e.printEvent();
+        map_events[e.getId()] = e;
+    }
+};
 
 
