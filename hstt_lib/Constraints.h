@@ -1,6 +1,7 @@
 #include "../pugixml-1.12/src/pugixml.hpp"
 #include <vector>
 #include <map>
+#include <memory>
 
 enum CostFunction {Linear, Quadratic, Step};
 
@@ -23,6 +24,8 @@ public: Constraint(pugi::xml_node node){
         required = bool_map[node.child("Required").child_value()];
         cost_function = cost_map[node.child("CostFunction").child_value()];
     }
+
+    virtual ~Constraint() = default;
 };
 
 /**
@@ -30,7 +33,7 @@ public: Constraint(pugi::xml_node node){
  * More importantly, it defines the cost of failing to make these assignments.
  */
 
-class AssignResourceConstraint : Constraint {
+class AssignResourceConstraint : public Constraint {
     std::vector<std::string> applies_to_events;
     std::vector<std::string> applies_to_event_groups;
 
@@ -44,7 +47,7 @@ public: explicit AssignResourceConstraint(pugi::xml_node node) : Constraint(node
  * More importantly, it defines the cost of failing to make these assignments.
  */
 
-class AssignTimeConstraint : Constraint {
+class AssignTimeConstraint : public Constraint {
 
 public: explicit AssignTimeConstraint(pugi::xml_node node) : Constraint(node) {
 
@@ -56,7 +59,7 @@ public: explicit AssignTimeConstraint(pugi::xml_node node) : Constraint(node) {
  * from a given instance event, and on their durations.
  */
 
-class SplitEventsConstraint : Constraint {
+class SplitEventsConstraint : public Constraint {
 
 public: explicit SplitEventsConstraint(pugi::xml_node node) : Constraint(node) {
 
@@ -68,7 +71,7 @@ public: explicit SplitEventsConstraint(pugi::xml_node node) : Constraint(node) {
  * of a particular duration that may be derived from a given instance event.
  */
 
-class DistributeSplitEventsConstraint : Constraint {
+class DistributeSplitEventsConstraint : public Constraint {
 
 public: explicit DistributeSplitEventsConstraint(pugi::xml_node node) : Constraint(node) {
 
@@ -80,7 +83,7 @@ public: explicit DistributeSplitEventsConstraint(pugi::xml_node node) : Constrai
  * for assignment to some solution resources.
  */
 
-class PreferResourcesConstraint : Constraint {
+class PreferResourcesConstraint : public Constraint {
 
 public: explicit PreferResourcesConstraint(pugi::xml_node node) : Constraint(node) {
 
@@ -92,7 +95,7 @@ public: explicit PreferResourcesConstraint(pugi::xml_node node) : Constraint(nod
  * are preferred for assignment to some solution events.
  */
 
-class PreferTimesConstraint : Constraint {
+class PreferTimesConstraint : public Constraint {
 
 public: explicit PreferTimesConstraint(pugi::xml_node node) : Constraint(node) {
 
@@ -107,7 +110,7 @@ public: explicit PreferTimesConstraint(pugi::xml_node node) : Constraint(node) {
  * and a different resource may be assigned to each of these solution resources.
  */
 
-class AvoidSplitAssignmentsConstraint : Constraint {
+class AvoidSplitAssignmentsConstraint : public Constraint {
 
 public: explicit AvoidSplitAssignmentsConstraint(pugi::xml_node node) : Constraint(node) {
 
@@ -119,7 +122,7 @@ public: explicit AvoidSplitAssignmentsConstraint(pugi::xml_node node) : Constrai
  * of an event group should be spread out in time.
  */
 
-class SpreadEventsConstraint : Constraint {
+class SpreadEventsConstraint : public Constraint {
 
 public: explicit SpreadEventsConstraint(pugi::xml_node node) : Constraint(node) {
 
@@ -129,7 +132,7 @@ public: explicit SpreadEventsConstraint(pugi::xml_node node) : Constraint(node) 
 /**
  * A link events constraint specifies that certain events should be assigned the same times.
  */
-class LinkEventsConstraint : Constraint {
+class LinkEventsConstraint : public Constraint {
 
 public: explicit LinkEventsConstraint(pugi::xml_node node) : Constraint(node) {
 
@@ -141,7 +144,7 @@ public: explicit LinkEventsConstraint(pugi::xml_node node) : Constraint(node) {
  * should be constrained so that the first event ends before the second begins.
  */
 
-class OrderEventsConstraint : Constraint {
+class OrderEventsConstraint : public Constraint {
 
 public: explicit OrderEventsConstraint(pugi::xml_node node) : Constraint(node) {
 
@@ -153,7 +156,7 @@ public: explicit OrderEventsConstraint(pugi::xml_node node) : Constraint(node) {
  * that is, they should not attend two or more events simultaneously.
  */
 
-class AvoidClashesConstraint : Constraint {
+class AvoidClashesConstraint : public Constraint {
 
 public: explicit AvoidClashesConstraint(pugi::xml_node node) : Constraint(node) {
 
@@ -164,7 +167,7 @@ public: explicit AvoidClashesConstraint(pugi::xml_node node) : Constraint(node) 
  * An avoid unavailable times constraint specifies that certain resources
  * are unavailable to attend any events at certain times.
  */
-class AvoidUnavailableTimesConstraint : Constraint {
+class AvoidUnavailableTimesConstraint : public Constraint {
 
 public: explicit AvoidUnavailableTimesConstraint(pugi::xml_node node) : Constraint(node) {
 
@@ -188,7 +191,7 @@ public: explicit AvoidUnavailableTimesConstraint(pugi::xml_node node) : Constrai
  *
  */
 
-class LimitIdleTimesConstraint : Constraint {
+class LimitIdleTimesConstraint : public Constraint {
 
 public: explicit LimitIdleTimesConstraint(pugi::xml_node node) : Constraint(node) {
 
@@ -201,7 +204,7 @@ public: explicit LimitIdleTimesConstraint(pugi::xml_node node) : Constraint(node
  * A cluster busy times constraint places limits on the number of time groups
  * during which a resource may be busy.
  */
-class ClusterBusyTimesConstraint : Constraint {
+class ClusterBusyTimesConstraint : public Constraint {
 
 public: explicit ClusterBusyTimesConstraint(pugi::xml_node node) : Constraint(node) {
 
@@ -214,7 +217,7 @@ public: explicit ClusterBusyTimesConstraint(pugi::xml_node node) : Constraint(no
  * certain time groups that a resource may be busy.
  */
 
-class LimitBusyTimesConstraint : Constraint {
+class LimitBusyTimesConstraint : public Constraint {
 
 public: explicit LimitBusyTimesConstraint(pugi::xml_node node) : Constraint(node) {
 
@@ -238,7 +241,7 @@ public: explicit LimitBusyTimesConstraint(pugi::xml_node node) : Constraint(node
  *
  */
 
-class LimitWorkloadConstraint : Constraint {
+class LimitWorkloadConstraint : public Constraint {
 
 public: explicit LimitWorkloadConstraint(pugi::xml_node node) : Constraint(node) {
 
@@ -247,8 +250,51 @@ public: explicit LimitWorkloadConstraint(pugi::xml_node node) : Constraint(node)
 
 
 class Constraints {
+    std::vector<std::unique_ptr<Constraint>> constraints;
 
 public : Constraints(pugi::xml_node instance) {
-
+    for(pugi::xml_node c : instance.child("Constraints").children()){
+        constraints.push_back(parseConstraint(c));
+    }
 }
+
+std::unique_ptr<Constraint> parseConstraint(pugi::xml_node c){
+    std::string c_name = c.name();
+    std::unique_ptr<Constraint> to_return;
+    if(c_name == "AssignResourceConstraint")
+        to_return = std::unique_ptr<Constraint>(new AssignResourceConstraint(c));
+    if(c_name == "AssignTimeConstraint")
+        to_return = std::unique_ptr<Constraint>(new AssignTimeConstraint(c));
+    if(c_name == "SplitEventsConstraint")
+        to_return = std::unique_ptr<Constraint>(new SplitEventsConstraint(c));
+    if(c_name == "DistributeSplitEventsConstraint")
+        to_return = std::unique_ptr<Constraint>(new DistributeSplitEventsConstraint(c));
+    if(c_name == "PreferResourcesConstraint")
+        to_return = std::unique_ptr<Constraint>(new PreferResourcesConstraint(c));
+    if(c_name == "PreferTimesConstraint")
+        to_return = std::unique_ptr<Constraint>(new PreferTimesConstraint(c));
+    if(c_name == "AvoidSplitAssignmentsConstraint")
+       to_return = std::unique_ptr<Constraint>(new AvoidSplitAssignmentsConstraint(c));
+    if(c_name == "SpreadEventsConstraint")
+        to_return = std::unique_ptr<Constraint>(new SpreadEventsConstraint(c));
+    if(c_name == "LinkEventsConstraint")
+        to_return = std::unique_ptr<Constraint>(new LinkEventsConstraint(c));
+    if(c_name == "OrderEventsConstraint")
+        to_return = std::unique_ptr<Constraint>(new OrderEventsConstraint(c));
+    if(c_name == "AvoidClashesConstraint")
+        to_return = std::unique_ptr<Constraint>(new AvoidClashesConstraint(c));
+    if(c_name == "AvoidUnavailableTimesConstraint")
+        to_return = std::unique_ptr<Constraint>(new AvoidUnavailableTimesConstraint(c));
+    if(c_name == "LimitIdleTimesConstraint")
+        to_return = std::unique_ptr<Constraint>(new LimitIdleTimesConstraint(c));
+    if(c_name == "ClusterBusyTimesConstraint")
+        to_return = std::unique_ptr<Constraint>(new ClusterBusyTimesConstraint(c));
+    if(c_name == "LimitBusyTimesConstraint")
+        to_return = std::unique_ptr<Constraint>(new LimitBusyTimesConstraint(c));
+    if(c_name == "LimitWorkloadConstraint")
+        to_return = std::unique_ptr<Constraint>(new LimitWorkloadConstraint(c));
+    return to_return;
+}
+
+
 };
