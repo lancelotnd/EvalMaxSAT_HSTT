@@ -4,6 +4,7 @@
 #include "hstt_lib/Times.h"
 #include "hstt_lib/Resources.h"
 #include "hstt_lib/Events.h"
+#include "hstt_lib/Constraints.h"
 
 int main()
 {
@@ -17,5 +18,6 @@ int main()
         Times t = Times(instance);
         Resources r = Resources(instance);
         Events e = Events(instance);
+        Constraints c = Constraints(instance);
     }
 }
