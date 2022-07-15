@@ -5,7 +5,7 @@
 
 #include <vector>
 #include <map>
-#include "../pugixml-1.12/src/pugixml.hpp"
+#include "../../lib/pugixml-1.12/src/pugixml.hpp"
 
 
 struct ResourceEvent {

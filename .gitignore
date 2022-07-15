@@ -1,5 +1,5 @@
 main
-pugixml-1.12/docs
-pugixml-1.12/scripts
-pugixml-1.12/CMakeLists.txt
+lib/pugixml-1.12/docs
+lib/pugixml-1.12/scripts
+lib/pugixml-1.12/CMakeLists.txt
 .idea

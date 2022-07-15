@@ -8,7 +8,7 @@
 */
 #include <map>
 #include <vector>
-#include "../pugixml-1.12/src/pugixml.hpp"
+#include "../../lib/pugixml-1.12/src/pugixml.hpp"
 
 
 struct ResourceGroup {

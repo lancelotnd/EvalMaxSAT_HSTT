@@ -8,7 +8,7 @@
  */
 #include <vector>
 #include <map>
-#include "../pugixml-1.12/src/pugixml.hpp"
+#include "../../lib/pugixml-1.12/src/pugixml.hpp"
 
 
 class Time {
@@ -58,6 +58,7 @@ public : Times(pugi::xml_node times_node){
 
     void addTime(pugi::xml_node time_node){
         Time t = Time(time_node);
+        t.printTime();
         times.push_back(t);
     }
 

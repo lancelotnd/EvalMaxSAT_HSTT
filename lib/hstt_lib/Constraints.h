@@ -1,4 +1,4 @@
-#include "../pugixml-1.12/src/pugixml.hpp"
+#include "../../lib/pugixml-1.12/src/pugixml.hpp"
 #include <vector>
 #include <map>
 #include <memory>
@@ -25,7 +25,7 @@ public: Constraint(pugi::xml_node node){
         cost_function = cost_map[node.child("CostFunction").child_value()];
         std::cout << "Constructed ";
         if (required)
-            std::cout << "HARD ";
+             std::cout << "HARD ";
         else std::cout << "SOFT ";
         std::cout <<  name << " with weight " << weight << std::endl;
     }
@@ -170,7 +170,7 @@ public: explicit AvoidClashesConstraint(pugi::xml_node node) : Constraint(node) 
 
 /**
  * An avoid unavailable times constraint specifies that certain resources
- * are unavailable to attend any events at certain times.
+     * are unavailable to attend any events at certain9 times.
  */
 class AvoidUnavailableTimesConstraint : public Constraint {
 
