@@ -56,6 +56,11 @@ public : Times(pugi::xml_node times_node){
         }
 }
 
+    size_t size()
+    {
+    return times.size();
+    }
+
     void addTime(pugi::xml_node time_node){
         Time t = Time(time_node);
         t.printTime();

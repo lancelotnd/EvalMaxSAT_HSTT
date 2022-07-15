@@ -538,7 +538,7 @@
 							<ResourceType Reference="Class"/>
 						</Resource>
 						<Resource Reference="T2">
-							<Role>Teacher</Role>
+								<Role>Teacher</Role>
 							<ResourceType Reference="Teacher"/>
 						</Resource>
 						<Resource>

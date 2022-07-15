@@ -6,9 +6,16 @@
  * and consistency in assigning resources to events, see the Role section below.
  * ResourceGroups are groups of Resources of the same ResourceType.
 */
+
+
+
+#pragma once
 #include <map>
 #include <vector>
 #include "../../lib/pugixml-1.12/src/pugixml.hpp"
+#include <set>
+#include "Events.h"
+
 
 
 struct ResourceGroup {
@@ -22,6 +29,7 @@ class Resource {
     std::string id;
     std::string ref_res_type;
     std::vector<std::string> ref_res_group;
+    std::set<Event*> associated_events;
 
 
 
@@ -35,8 +43,12 @@ public: Resource(pugi::xml_node t){
         }
     }
 
-    Resource(){
-        //Default constructor required for maps.
+    Resource() {
+        //Default constructor required for maps.q
+    }
+
+    void associateEvent(Event* e) {
+        associated_events.insert(e);
     }
 
     std::string getId(){
@@ -81,6 +93,13 @@ public: Resources(pugi::xml_node resources_node) {
         }
     }
 
+
+    size_t resources_types_size(){
+            return resourceTypes.size();
+    }
+
+
+
     void addResourceGroups(pugi::xml_node rg){
         for (pugi::xml_node r : rg.children()) {
             ResourceGroup res_g;
@@ -89,5 +108,11 @@ public: Resources(pugi::xml_node resources_node) {
             res_g.reference = r.child("ResourceType").attribute("Reference").as_string();
             resourceGroups[res_g.id] = res_g;
         }
+
+    }
+
+    Resource* getPrt(std::string res_ref) {
+        return &resourceMap[res_ref];
     }
 };
+

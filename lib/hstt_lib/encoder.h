@@ -33,6 +33,25 @@ void test_encode(){
     } else {
         std::cout << "UNSAT" << std::endl;
     }
-
-
 }
+
+class   Encoder {
+    Times& t;
+    Resources& r;
+    Events& e;
+    Constraints& c;
+
+public: Encoder(
+        Times &t,
+        Resources &r,
+        Events &e,
+        Constraints &c) : c(c), r(r), e(e), t(t){
+
+        std::cout << "There are " << e.size() << " events " << std::endl;
+        std::cout << "There are " << t.size() << " time sluts " << std::endl;
+        std::cout << "There are " << r.resources_types_size() << " resources types " << std::endl;
+    }
+
+
+
+};
