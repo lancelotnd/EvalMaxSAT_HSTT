@@ -14,7 +14,6 @@
 #include <vector>
 #include "../../lib/pugixml-1.12/src/pugixml.hpp"
 #include <set>
-#include "Events.h"
 
 
 
@@ -29,7 +28,7 @@ class Resource {
     std::string id;
     std::string ref_res_type;
     std::vector<std::string> ref_res_group;
-    std::set<Event*> associated_events;
+    std::set<std::string> associated_events;
 
 
 
@@ -47,7 +46,15 @@ public: Resource(pugi::xml_node t){
         //Default constructor required for maps.q
     }
 
-    void associateEvent(Event* e) {
+    void printAssociatedEvents(){
+        std::cout << name << " " << ref_res_type << " : ";
+        for (auto e: associated_events) {
+            std::cout << e << ", ";
+        }
+        std::cout << std::endl;
+    }
+
+    void associateEvent(std::string e) {
         associated_events.insert(e);
     }
 
@@ -96,6 +103,13 @@ public: Resources(pugi::xml_node resources_node) {
 
     size_t resources_types_size(){
             return resourceTypes.size();
+    }
+
+
+    void printAllAssociatedEvents(){
+        for(auto e :resourceMap){
+            e.second.printAssociatedEvents();
+        }
     }
 
 

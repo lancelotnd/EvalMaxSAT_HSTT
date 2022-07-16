@@ -4,7 +4,6 @@
 */
 
 
-#pragma once
 
 #include <vector>
 #include <map>
@@ -43,6 +42,7 @@ public: Event(pugi::xml_node e, Resources &all_resources){
             if(res.res_ref != ""){
                 res.is_wild_card = false;
                 res.res_ptr = all_resources.getPrt(res.res_ref);
+                res.res_ptr->associateEvent(id);
             }
             res.role = r.child("Role").child_value();
             res.res_type_ref = r.child("ResourceType").attribute("Reference").as_string();

@@ -50,6 +50,11 @@ public: Encoder(
         std::cout << "There are " << e.size() << " events " << std::endl;
         std::cout << "There are " << t.size() << " time sluts " << std::endl;
         std::cout << "There are " << r.resources_types_size() << " resources types " << std::endl;
+
+        std::cout << "Conflictual events for each resource" << std::endl;
+        r.printAllAssociatedEvents();
+
+
     }
 
 
