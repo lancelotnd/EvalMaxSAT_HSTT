@@ -49,7 +49,9 @@ class   Encoder {
     Events& e;
     Constraints& c;
     std::map<int, Solution_event> literal_map;
-    std::vector<std::vector<int>> clashes;
+    std::set<std::vector<int>> clashes;
+    int lit = 1;
+
 
 public: Encoder(
         Times &t,
@@ -63,11 +65,14 @@ public: Encoder(
     }
 
     void encode(){
-        int lit = 1;
+
+        ClauseSet clauses;
+        std::map<std::string,std::vector<int>> all_lit_for_event;
         for(int i_t = 0; i_t < t.size(); i_t++){
-            std::map<std::string,std::vector<int>> all_lit_for_event;
+            std::map<std::string, std::vector<int>> wildcard_clashes;
+            std::map<std::string, std::vector<int>> lits_of_event_at_time;
+
             for (int i_e = 0; i_e < e.size(); i_e++) {
-                std::map<std::string, std::vector<int>> lits_of_event_at_time;
                 std::map<std::string, std::vector<std::string>> potential_resources_for_type;
                 for(auto w: e[i_e].getWildCards()){
                     potential_resources_for_type[w] = r.getResourcesOfType(w);
@@ -79,6 +84,8 @@ public: Encoder(
                         s.assigned_resources = {r.getPrt(candidate)};
                         s.lit = lit;
                         literal_map[lit] = s;
+                        //We store literal of this wildcards for that time.
+                        wildcard_clashes[candidate].push_back(lit);
                         //we store literals of this event for that time
                         lits_of_event_at_time[s.event].push_back(lit);
                         lit++;
@@ -92,10 +99,58 @@ public: Encoder(
                     for(auto & event : set_events) {
                         v.insert(v.end(), lits_of_event_at_time[event].begin(), lits_of_event_at_time[event].end());
                     }
-                    clashes.push_back(v);
+                    clashes.insert(v);
+                }
+                //Pushing the wildcard_clashes
+                for(auto & c : wildcard_clashes){
+                    clashes.insert(c.second);
                 }
             }
+            for (auto & ev: lits_of_event_at_time) {
+                all_lit_for_event[ev.first].insert(all_lit_for_event[ev.first].end(), ev.second.begin(), ev.second.end());
+            }
         }
+        int nvar = lit;
+
+        //At most one for each vector
+        for(auto c: clashes){
+            if(!c.empty() && c.size() > 1){
+                seqcounter_encode_atmostN(lit,clauses,c,1);
+            }
+        }
+#if 1
+        //exactly one for each event
+        for(auto e: all_lit_for_event) {
+            if(!e.second.empty())
+            seqcounter_encode_atleastN(lit,clauses,e.second,1);
+            seqcounter_encode_atmostN(lit,clauses,e.second,1);
+        }
+#endif
+    std::vector<std::vector<int>> allClauses = clauses.get_clauses();
+
+    void *solver = ipamir_init();
+
+    for(auto &vec: clauses.get_clauses()){
+        for(auto &lit:vec) {
+            ipamir_add_hard(solver,lit);
+        }
+        ipamir_add_hard(solver,0);
+    }
+    for(int i = nvar+1; i<= lit; i++){
+        //ipamir_add_soft_lit(solver,-i,1);
+    }
+    int return_code = ipamir_solve(solver);
+    if(return_code == 10){
+        std::cout << "Satisfiable" << std::endl;
+        for(int i = 0; i< lit; i++){
+            std::cout << ipamir_val_lit(solver, i+1) << " ";
+
+        }
+        std::cout << std::endl;
+        std::cout << "Cost is " << ipamir_val_obj(solver) << std::endl;
+    } else {
+        std::cout << "UNSAT" << std::endl;
+    }
     }
 
     void encode_requirements(){
