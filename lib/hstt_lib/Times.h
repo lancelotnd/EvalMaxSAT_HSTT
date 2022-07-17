@@ -29,6 +29,10 @@ public: Time(pugi::xml_node t){
         }
     }
 
+    std::string getId(){
+        return id;
+    }
+
     void printTime() {
         std::cout << id << " : " << name << ", " << ref_day << std::endl;
         for(auto e :ref_timegroups) {
@@ -72,4 +76,7 @@ public : Times(pugi::xml_node times_node){
         std::string name = tg.child("Name").child_value();
         timegroups[id] = name;
     }
+
+    Time & operator [](int i) {return times[i];}
+
 };

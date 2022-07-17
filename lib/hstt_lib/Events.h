@@ -43,6 +43,8 @@ public: Event(pugi::xml_node e, Resources &all_resources){
                 res.is_wild_card = false;
                 res.res_ptr = all_resources.getPrt(res.res_ref);
                 res.res_ptr->associateEvent(id);
+            } else {
+                res.is_wild_card = true;
             }
             res.role = r.child("Role").child_value();
             res.res_type_ref = r.child("ResourceType").attribute("Reference").as_string();
@@ -53,11 +55,11 @@ public: Event(pugi::xml_node e, Resources &all_resources){
     Event(){
     }
 
-    std::string getId(){
+    std::string getId() const {
         return id;
     }
 
-    void printEvent() {
+    void printEvent() const {
         std::cout << id << " : " << name << std::endl;
         std::cout << "Duration : " << duration << " | Course ref : " << course_ref << std::endl;
         std::cout << "-- Resources --" << std::endl;
@@ -71,11 +73,26 @@ public: Event(pugi::xml_node e, Resources &all_resources){
         std::cout << "------------------------------" << std::endl;
     }
 
+    /**
+     * returns all the resource types of this event that need to be assigned
+     * by the solver.
+     */
+    std::vector<std::string> getWildCards(){
+        std::vector<std::string> toReturn;
+        for(auto r: resources){
+            if(r.is_wild_card){
+                toReturn.push_back(r.res_type_ref);
+            }
+        }
+        return toReturn;
+    }
+
 };
 
 class Events {
     std::map<std::string, std::string> event_groups;
     std::map<std::string, Event> map_events;
+    std::vector<std::string> map_keys;
     int nb_event;
 
 
@@ -99,16 +116,18 @@ public: Events(pugi::xml_node events_node, Resources& r){
         }
     }
 
-
-    void addEvent(pugi::xml_node event_node, Resources &r){
+    void addEvent(pugi::xml_node event_node, Resources &r)  {
         Event e = Event(event_node, r);
         e.printEvent();
         map_events[e.getId()] = e;
+        map_keys.push_back(e.getId());
     }
 
     size_t size(){
         return map_events.size();
     }
+
+    Event & operator [](int i) {return map_events[map_keys[i]];}
 };
 
 

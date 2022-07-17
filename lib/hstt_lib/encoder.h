@@ -35,11 +35,21 @@ void test_encode(){
     }
 }
 
+
+struct Solution_event {
+    int lit;
+    std::string time;
+    std::string event;
+    std::vector<Resource*> assigned_resources;
+} ;
+
 class   Encoder {
     Times& t;
     Resources& r;
     Events& e;
     Constraints& c;
+    std::map<int, Solution_event> literal_map;
+    std::vector<std::vector<int>> clashes;
 
 public: Encoder(
         Times &t,
@@ -50,13 +60,46 @@ public: Encoder(
         std::cout << "There are " << e.size() << " events " << std::endl;
         std::cout << "There are " << t.size() << " time sluts " << std::endl;
         std::cout << "There are " << r.resources_types_size() << " resources types " << std::endl;
-
-        std::cout << "Conflictual events for each resource" << std::endl;
-        r.printAllAssociatedEvents();
-
-
     }
 
+    void encode(){
+        int lit = 1;
+        for(int i_t = 0; i_t < t.size(); i_t++){
+            std::map<std::string,std::vector<int>> all_lit_for_event;
+            for (int i_e = 0; i_e < e.size(); i_e++) {
+                std::map<std::string, std::vector<int>> lits_of_event_at_time;
+                std::map<std::string, std::vector<std::string>> potential_resources_for_type;
+                for(auto w: e[i_e].getWildCards()){
+                    potential_resources_for_type[w] = r.getResourcesOfType(w);
+                    //We encode a new lit for
+                    for(auto candidate : potential_resources_for_type[w]){
+                        Solution_event s;
+                        s.time = t[i_t].getId();
+                        s.event = e[i_e].getId();
+                        s.assigned_resources = {r.getPrt(candidate)};
+                        s.lit = lit;
+                        literal_map[lit] = s;
+                        //we store literals of this event for that time
+                        lits_of_event_at_time[s.event].push_back(lit);
+                        lit++;
+                        std::cout << "LIT " << lit << " for " << s.time << " " << s.event << " " << s.assigned_resources[0]->getId()  << std::endl;
+                    }
+                }
+                //We handle clash constraints
+                std::vector<std::set<std::string>> clashing_events = r.getAllClashingEvents();
+                for(auto & set_events : clashing_events){
+                    std::vector<int> v;
+                    for(auto & event : set_events) {
+                        v.insert(v.end(), lits_of_event_at_time[event].begin(), lits_of_event_at_time[event].end());
+                    }
+                    clashes.push_back(v);
+                }
+            }
+        }
+    }
 
+    void encode_requirements(){
+
+    }
 
 };

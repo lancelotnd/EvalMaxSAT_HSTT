@@ -42,8 +42,16 @@ public: Resource(pugi::xml_node t){
         }
     }
 
+    std::string getResType(){
+        return ref_res_type;
+    }
+
     Resource() {
         //Default constructor required for maps.q
+    }
+
+    std::set<std::string> getClashingEvents(){
+        return  associated_events;
     }
 
     void printAssociatedEvents(){
@@ -75,6 +83,7 @@ class Resources {
     std::map<std::string, std::string> resourceTypes;
     std::map<std::string, ResourceGroup> resourceGroups;
     std::map<std::string, Resource> resourceMap;
+    std::map<std::string, std::vector<std::string>> resources_of_types;
 
 
 
@@ -90,6 +99,7 @@ public: Resources(pugi::xml_node resources_node) {
                 Resource res = Resource(r);
                 res.printResource();
                 resourceMap[res.getId()] = res;
+                resources_of_types[res.getResType()].push_back(res.getId());
             }
         }
     }
@@ -106,13 +116,17 @@ public: Resources(pugi::xml_node resources_node) {
     }
 
 
-    void printAllAssociatedEvents(){
+    std::vector<std::set<std::string>> getAllClashingEvents(){
+        std::vector<std::set<std::string>> toReturn;
         for(auto e :resourceMap){
-            e.second.printAssociatedEvents();
+            toReturn.push_back(e.second.getClashingEvents());
         }
+        return toReturn;
     }
 
-
+    std::vector<std::string> getResourcesOfType(std::string type) {
+        return resources_of_types[type];
+    }
 
     void addResourceGroups(pugi::xml_node rg){
         for (pugi::xml_node r : rg.children()) {

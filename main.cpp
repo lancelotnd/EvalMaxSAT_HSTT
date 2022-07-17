@@ -23,6 +23,7 @@ int main()
         Events e = Events(instance, r);
         Constraints c = Constraints(instance);
         Encoder encoder = Encoder(t,r,e,c);
+        encoder.encode();
     }
 
 }
