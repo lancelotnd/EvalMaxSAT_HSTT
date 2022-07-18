@@ -67,7 +67,6 @@ public : Times(pugi::xml_node times_node){
 
     void addTime(pugi::xml_node time_node){
         Time t = Time(time_node);
-        t.printTime();
         times.push_back(t);
     }
 

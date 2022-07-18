@@ -2,40 +2,6 @@
 #include <vector>
 #include "../../ipamir.h"
 
-void test_encode(){
-    int top_id = 4;
-    int nvar = 4;
-    std::vector<int> v = {1,2,3,4};
-    ClauseSet c;
-    seqcounter_encode_atmostN(top_id, c, v,3);
-    seqcounter_encode_atleastN(top_id, c , v,2);
-    c.dump(std::cout);
-    void *solver = ipamir_init();
-
-    for(auto &vec: c.get_clauses()){
-        for(auto &lit:vec) {
-            ipamir_add_hard(solver,lit);
-        }
-        ipamir_add_hard(solver,0);
-    }
-    for(int i = nvar+1; i<= top_id; i++){
-        ipamir_add_soft_lit(solver,i,1);
-    }
-    int return_code = ipamir_solve(solver);
-    if(return_code == 10){
-        std::cout << "Satisfiable" << std::endl;
-        for(int i =0; i< top_id; i++){
-            std::cout << ipamir_val_lit(solver, i+1) << " ";
-
-        }
-        std::cout << std::endl;
-        std::cout << "Cost is " << ipamir_val_obj(solver) << std::endl;
-    } else {
-        std::cout << "UNSAT" << std::endl;
-    }
-}
-
-
 struct Solution_event {
     int lit;
     std::string time;
@@ -60,7 +26,7 @@ public: Encoder(
         Constraints &c) : c(c), r(r), e(e), t(t){
 
         std::cout << "There are " << e.size() << " events " << std::endl;
-        std::cout << "There are " << t.size() << " time sluts " << std::endl;
+        std::cout << "There are " << t.size() << " time slots " << std::endl;
         std::cout << "There are " << r.resources_types_size() << " resources types " << std::endl;
     }
 
@@ -89,7 +55,6 @@ public: Encoder(
                         //we store literals of this event for that time
                         lits_of_event_at_time[s.event].push_back(lit);
                         lit++;
-                        std::cout << "LIT " << lit << " for " << s.time << " " << s.event << " " << s.assigned_resources[0]->getId()  << std::endl;
                     }
                 }
                 //We handle clash constraints
@@ -115,15 +80,15 @@ public: Encoder(
         //At most one for each vector
         for(auto c: clashes){
             if(!c.empty() && c.size() > 1){
-                seqcounter_encode_atmostN(lit,clauses,c,1);
+                seqcounter_encode_atmostN(lit,clauses,c,c.size());
             }
         }
 #if 1
         //exactly one for each event
         for(auto e: all_lit_for_event) {
             if(!e.second.empty())
-            seqcounter_encode_atleastN(lit,clauses,e.second,1);
-            seqcounter_encode_atmostN(lit,clauses,e.second,1);
+            seqcounter_encode_atleastN(lit,clauses,e.second,0);
+            seqcounter_encode_atmostN(lit,clauses,e.second,e.second.size());
         }
 #endif
     std::vector<std::vector<int>> allClauses = clauses.get_clauses();
@@ -137,10 +102,10 @@ public: Encoder(
         ipamir_add_hard(solver,0);
     }
     for(int i = nvar+1; i<= lit; i++){
-        //ipamir_add_soft_lit(solver,-i,1);
+        ipamir_add_soft_lit(solver,i,1);
     }
     int return_code = ipamir_solve(solver);
-    if(return_code == 10){
+    if(return_code == 30){
         std::cout << "Satisfiable" << std::endl;
         for(int i = 0; i< lit; i++){
             std::cout << ipamir_val_lit(solver, i+1) << " ";
@@ -154,7 +119,5 @@ public: Encoder(
     }
 
     void encode_requirements(){
-
     }
-
 };

@@ -23,11 +23,6 @@ public: Constraint(pugi::xml_node node){
         weight = std::stoi(node.child("Weight").child_value());
         required = bool_map[node.child("Required").child_value()];
         cost_function = cost_map[node.child("CostFunction").child_value()];
-        std::cout << "Constructed ";
-        if (required)
-             std::cout << "HARD ";
-        else std::cout << "SOFT ";
-        std::cout <<  name << " with weight " << weight << std::endl;
     }
 
     virtual ~Constraint() = default;

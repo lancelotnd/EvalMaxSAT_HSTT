@@ -97,7 +97,6 @@ public: Resources(pugi::xml_node resources_node) {
             }
             else if ((std::string) r.name() == "Resource"){
                 Resource res = Resource(r);
-                res.printResource();
                 resourceMap[res.getId()] = res;
                 resources_of_types[res.getResType()].push_back(res.getId());
             }

@@ -118,7 +118,6 @@ public: Events(pugi::xml_node events_node, Resources& r){
 
     void addEvent(pugi::xml_node event_node, Resources &r)  {
         Event e = Event(event_node, r);
-        e.printEvent();
         map_events[e.getId()] = e;
         map_keys.push_back(e.getId());
     }
