@@ -31,7 +31,8 @@ public: Encoder(
     }
 
     void encode(){
-
+        std::vector<int> soft_lits;
+        std::vector<std::vector<int>> allClauses;
         ClauseSet clauses;
         std::map<std::string,std::vector<int>> all_lit_for_event;
         for(int i_t = 0; i_t < t.size(); i_t++){
@@ -65,6 +66,7 @@ public: Encoder(
                         v.insert(v.end(), lits_of_event_at_time[event].begin(), lits_of_event_at_time[event].end());
                     }
                     clashes.insert(v);
+
                 }
                 //Pushing the wildcard_clashes
                 for(auto & c : wildcard_clashes){
@@ -80,35 +82,73 @@ public: Encoder(
         //At most one for each vector
         for(auto c: clashes){
             if(!c.empty() && c.size() > 1){
-                seqcounter_encode_atmostN(lit,clauses,c,c.size());
+                seqcounter_encode_atmostN(lit,clauses,c,1);
+                lit++;
+                soft_lits.push_back(lit);
+                for(auto cl: clauses.get_clauses()){
+                    std::vector<int> v = cl;
+                    v.push_back(-lit);
+                    allClauses.push_back(v);
+                }
+                clauses.clear();
             }
         }
-#if 1
         //exactly one for each event
         for(auto e: all_lit_for_event) {
-            if(!e.second.empty())
-            seqcounter_encode_atleastN(lit,clauses,e.second,0);
-            seqcounter_encode_atmostN(lit,clauses,e.second,e.second.size());
+            if(!e.second.empty()) {
+                seqcounter_encode_atleastN(lit,clauses,e.second,1);
+                lit++;
+                soft_lits.push_back(lit);
+                for(auto cl: clauses.get_clauses()){
+                    std::vector<int> v = cl;
+                    v.push_back(-lit);
+                    allClauses.push_back(v);
+                }
+                clauses.clear();
+                seqcounter_encode_atmostN(lit,clauses,e.second,1);
+                lit++;
+                soft_lits.push_back(lit);
+                for(auto cl: clauses.get_clauses()){
+                    std::vector<int> v = cl;
+                    v.push_back(-lit);
+                    allClauses.push_back(v);
+                }
+                clauses.clear();
+            }
         }
-#endif
-    std::vector<std::vector<int>> allClauses = clauses.get_clauses();
 
     void *solver = ipamir_init();
 
-    for(auto &vec: clauses.get_clauses()){
+    for(auto &vec:allClauses){
         for(auto &lit:vec) {
             ipamir_add_hard(solver,lit);
         }
         ipamir_add_hard(solver,0);
     }
-    for(int i = nvar+1; i<= lit; i++){
-        ipamir_add_soft_lit(solver,i,1);
+    for(auto l : soft_lits){
+        ipamir_add_soft_lit(solver,-l,1);
     }
+    std::cout << "================================================" << std::endl;
+    std::cout << "There are " << nvar << " pure literals" << std::endl;
+    std::cout << "Whith constraints, there are " <<  lit << " literals, " << soft_lits.size() << " of which are soft. "  << " NB CLAUSES : " << allClauses.size()<< std::endl;
     int return_code = ipamir_solve(solver);
     if(return_code == 30){
         std::cout << "Satisfiable" << std::endl;
+        std::string previous_time = "";
         for(int i = 0; i< lit; i++){
-            std::cout << ipamir_val_lit(solver, i+1) << " ";
+            if(ipamir_val_lit(solver, i+1) > 0){
+                int literal = ipamir_val_lit(solver, i+1);
+                if(literal <= nvar){
+                    Solution_event s = literal_map[literal];
+                    if(previous_time != s.time){
+                        previous_time = s.time;
+                        std::cout << "=================================================" << std::endl;
+                    }
+                    std::cout << s.time << " ";
+                    e.getEvent(s.event).printEvent();
+                    std::cout << s.assigned_resources[0]->getId() << std::endl;
+                }
+            }
 
         }
         std::cout << std::endl;

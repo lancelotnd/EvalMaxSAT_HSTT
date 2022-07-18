@@ -60,17 +60,10 @@ public: Event(pugi::xml_node e, Resources &all_resources){
     }
 
     void printEvent() const {
-        std::cout << id << " : " << name << std::endl;
-        std::cout << "Duration : " << duration << " | Course ref : " << course_ref << std::endl;
-        std::cout << "-- Resources --" << std::endl;
+        std::cout << id << " : " << name << " ";
         for(auto r : resources) {
-            std::cout << "> " << r.res_ref << " : " << r.role << " " << r.res_type_ref << std::endl;
+            std::cout << "> " << r.res_ref << " " << r.res_type_ref << " ";
         }
-        std::cout << "-- EventGroups --" << std::endl;
-        for(auto r : event_groups_ref) {
-            std::cout << ">> " << r << std::endl;
-        }
-        std::cout << "------------------------------" << std::endl;
     }
 
     /**
@@ -124,6 +117,10 @@ public: Events(pugi::xml_node events_node, Resources& r){
 
     size_t size(){
         return map_events.size();
+    }
+
+    Event & getEvent(std::string key){
+        return map_events[key];
     }
 
     Event & operator [](int i) {return map_events[map_keys[i]];}
