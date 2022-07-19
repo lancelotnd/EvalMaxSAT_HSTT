@@ -17,6 +17,7 @@ class   Encoder {
     std::map<int, Solution_event> literal_map;
     std::set<std::vector<int>> clashes;
     int lit = 1;
+    int nb_clauses = 0;
 
 
 public: Encoder(
@@ -25,14 +26,13 @@ public: Encoder(
         Events &e,
         Constraints &c) : c(c), r(r), e(e), t(t){
 
-        std::cout << "There are " << e.size() << " events " << std::endl;
-        std::cout << "There are " << t.size() << " time slots " << std::endl;
-        std::cout << "There are " << r.resources_types_size() << " resources types " << std::endl;
+        std::cout << "c There are " << e.size() << " events " << std::endl;
+        std::cout << "c There are " << t.size() << " time slots " << std::endl;
+        std::cout << "c There are " << r.resources_types_size() << " resources types " << std::endl;
     }
 
     void encode(){
-        std::vector<int> soft_lits;
-        std::vector<std::vector<int>> allClauses;
+        void *solver = ipamir_init();
         ClauseSet clauses;
         std::map<std::string,std::vector<int>> all_lit_for_event;
         for(int i_t = 0; i_t < t.size(); i_t++){
@@ -83,57 +83,25 @@ public: Encoder(
         for(auto c: clashes){
             if(!c.empty() && c.size() > 1){
                 seqcounter_encode_atmostN(lit,clauses,c,1);
-                lit++;
-                soft_lits.push_back(lit);
-                for(auto cl: clauses.get_clauses()){
-                    std::vector<int> v = cl;
-                    v.push_back(-lit);
-                    allClauses.push_back(v);
-                }
-                clauses.clear();
+                push_clause_to_solver(solver, clauses,lit);
             }
         }
         //exactly one for each event
         for(auto e: all_lit_for_event) {
             if(!e.second.empty()) {
                 seqcounter_encode_atleastN(lit,clauses,e.second,1);
-                lit++;
-                soft_lits.push_back(lit);
-                for(auto cl: clauses.get_clauses()){
-                    std::vector<int> v = cl;
-                    v.push_back(-lit);
-                    allClauses.push_back(v);
-                }
-                clauses.clear();
+                push_clause_to_solver(solver,clauses,lit);
                 seqcounter_encode_atmostN(lit,clauses,e.second,1);
-                lit++;
-                soft_lits.push_back(lit);
-                for(auto cl: clauses.get_clauses()){
-                    std::vector<int> v = cl;
-                    v.push_back(-lit);
-                    allClauses.push_back(v);
-                }
-                clauses.clear();
+                push_clause_to_solver(solver,clauses,lit);
             }
         }
 
-    void *solver = ipamir_init();
-
-    for(auto &vec:allClauses){
-        for(auto &lit:vec) {
-            ipamir_add_hard(solver,lit);
-        }
-        ipamir_add_hard(solver,0);
-    }
-    for(auto l : soft_lits){
-        ipamir_add_soft_lit(solver,-l,1);
-    }
-    std::cout << "================================================" << std::endl;
-    std::cout << "There are " << nvar << " pure literals" << std::endl;
-    std::cout << "Whith constraints, there are " <<  lit << " literals, " << soft_lits.size() << " of which are soft. "  << " NB CLAUSES : " << allClauses.size()<< std::endl;
+    std::cout << "c ================================================" << std::endl;
+    std::cout << "c There are " << nvar << " pure literals" << std::endl;
+    std::cout << "c Whith constraints, there are " <<  lit << " literals, " << lit-nvar << " of which are soft. "  << " NB CLAUSES : " <<nb_clauses<< std::endl;
     int return_code = ipamir_solve(solver);
     if(return_code == 30){
-        std::cout << "Satisfiable" << std::endl;
+        std::cout << "c Satisfiable" << std::endl;
         std::string previous_time = "";
         for(int i = 0; i< lit; i++){
             if(ipamir_val_lit(solver, i+1) > 0){
@@ -142,22 +110,38 @@ public: Encoder(
                     Solution_event s = literal_map[literal];
                     if(previous_time != s.time){
                         previous_time = s.time;
-                        std::cout << "=================================================" << std::endl;
+                        std::cout << "c =================================================" << std::endl;
                     }
-                    std::cout << s.time << " ";
+                    std::cout << "c "<< s.time << " ";
                     e.getEvent(s.event).printEvent();
                     std::cout << s.assigned_resources[0]->getId() << std::endl;
                 }
             }
-
         }
         std::cout << std::endl;
-        std::cout << "Cost is " << ipamir_val_obj(solver) << std::endl;
+        std::cout << "c Cost is " << ipamir_val_obj(solver) << std::endl;
     } else {
         std::cout << "UNSAT" << std::endl;
     }
     }
 
-    void encode_requirements(){
+    void push_clause_to_solver(void* solver, ClauseSet &c, int & top_lit){
+        top_lit++;
+        for(auto &v: c.get_clauses()){
+            std::cout << "h ";
+            for(auto &l :v){
+                std::cout << l << " ";
+                ipamir_add_hard(solver, l);
+            }
+            std::cout << -top_lit << " 0" << std::endl;
+            ipamir_add_hard(solver, -top_lit);
+            ipamir_add_hard(solver, 0);
+            nb_clauses++;
+        }
+        std::cout  << "1 " << -top_lit << " 0" << std::endl;
+        ipamir_add_soft_lit(solver, -top_lit, 1);
+        c.clear();
     }
+
+
 };
