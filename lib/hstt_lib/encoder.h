@@ -32,6 +32,7 @@ public: Encoder(
     }
 
     void encode(){
+        std::cout << "c ENCODING ALL LITERALS" << std::endl;
         void *solver = ipamir_init();
         ClauseSet clauses;
         std::map<std::string,std::vector<int>> all_lit_for_event;
@@ -55,10 +56,12 @@ public: Encoder(
                         wildcard_clashes[candidate].push_back(lit);
                         //we store literals of this event for that time
                         lits_of_event_at_time[s.event].push_back(lit);
+                        std::cout << "c Encoded LIT " << lit << std::endl;
                         lit++;
                     }
                 }
                 //We handle clash constraints
+                std::cout << "c Encoding clash constraints" << std::endl;
                 std::vector<std::set<std::string>> clashing_events = r.getAllClashingEvents();
                 for(auto & set_events : clashing_events){
                     std::vector<int> v;
@@ -78,6 +81,7 @@ public: Encoder(
             }
         }
         int nvar = lit;
+        std::cout << "c GENERATING and PUSHING AT MOST ONE CONSTRAINT to solver" << std::endl;
 
         //At most one for each vector
         for(auto c: clashes){
@@ -86,6 +90,8 @@ public: Encoder(
                 push_clause_to_solver(solver, clauses,lit);
             }
         }
+        std::cout << "c GENERATING and PUSHING EXACTLY ONE CONSTRAINT to solver" << std::endl;
+
         //exactly one for each event
         for(auto e: all_lit_for_event) {
             if(!e.second.empty()) {
@@ -99,6 +105,7 @@ public: Encoder(
     std::cout << "c ================================================" << std::endl;
     std::cout << "c There are " << nvar << " pure literals" << std::endl;
     std::cout << "c Whith constraints, there are " <<  lit << " literals, " << lit-nvar << " of which are soft. "  << " NB CLAUSES : " <<nb_clauses<< std::endl;
+    std::cout << "c START SOLVING" << std::endl;
     int return_code = ipamir_solve(solver);
     if(return_code == 30){
         std::cout << "c Satisfiable" << std::endl;
