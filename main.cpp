@@ -7,12 +7,12 @@
 #include "lib/hstt_lib/Constraints.h"
 #include "lib/hstt_lib/encoder.h"
 
-int main()
+int main(int argc, char** argv)
 {
 
 
     pugi::xml_document doc;
-    pugi::xml_parse_result result = doc.load_file("xml-files/DenmarkSmallSchool.xml");
+    pugi::xml_parse_result result = doc.load_file(argv[1]);
     if (!result)
         return -1;
 

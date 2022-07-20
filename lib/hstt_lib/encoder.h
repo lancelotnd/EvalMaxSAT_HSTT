@@ -59,7 +59,7 @@ public: Encoder(
                         wildcard_clashes[candidate].push_back(lit);
                         //we store literals of this event for that time
                         lits_of_event_at_time[s.event].push_back(lit);
-                        std::cout << "c Encoded LIT " << lit << std::endl;
+                        //std::cout << "c Encoded LIT " << lit << std::endl;
                         lit++;
                     }
                 }
@@ -73,12 +73,12 @@ public: Encoder(
                     s.has_wildcard = false;
                     literal_map[lit] =s;
                     lits_of_event_at_time[s.event].push_back(lit);
-                    std::cout << "c Encoded LIT " << lit << std::endl;
+                    //std::cout << "c Encoded LIT " << lit << std::endl;
                     lit++;
                 }
 
                 //We handle clash constraints
-                std::cout << "c Encoding clash constraints" << std::endl;
+                //std::cout << "c Encoding clash constraints" << std::endl;
                 std::vector<std::set<std::string>> clashing_events = r.getAllClashingEvents();
                 for(auto & set_events : clashing_events){
                     std::vector<int> v;
@@ -122,6 +122,7 @@ public: Encoder(
     std::cout << "c ================================================" << std::endl;
     std::cout << "c There are " << nvar << " pure literals" << std::endl;
     std::cout << "c Whith constraints, there are " <<  lit << " literals, " << lit-nvar << " of which are soft. "  << " NB CLAUSES : " <<nb_clauses<< std::endl;
+#if 0
     std::cout << "c START SOLVING" << std::endl;
     int return_code = ipamir_solve(solver);
     if(return_code == 30){
@@ -150,6 +151,7 @@ public: Encoder(
     } else {
         std::cout << "UNSAT" << std::endl;
     }
+#endif
     }
 
     void push_clause_to_solver(void* solver, ClauseSet &c, int & top_lit){
@@ -158,15 +160,15 @@ public: Encoder(
             std::cout << "h ";
             for(auto &l :v){
                 std::cout << l << " ";
-                ipamir_add_hard(solver, l);
+                //ipamir_add_hard(solver, l);
             }
             std::cout << -top_lit << " 0" << std::endl;
-            ipamir_add_hard(solver, -top_lit);
-            ipamir_add_hard(solver, 0);
+            //ipamir_add_hard(solver, -top_lit);
+            //ipamir_add_hard(solver, 0);
             nb_clauses++;
         }
         std::cout  << "1 " << -top_lit << " 0" << std::endl;
-        ipamir_add_soft_lit(solver, -top_lit, 1);
+        //ipamir_add_soft_lit(solver, -top_lit, 1);
         c.clear();
     }
 
