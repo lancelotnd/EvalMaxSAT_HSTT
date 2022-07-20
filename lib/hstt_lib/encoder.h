@@ -6,6 +6,7 @@ struct Solution_event {
     int lit;
     std::string time;
     std::string event;
+    bool has_wildcard = false;
     std::vector<Resource*> assigned_resources;
 } ;
 
@@ -42,6 +43,7 @@ public: Encoder(
 
             for (int i_e = 0; i_e < e.size(); i_e++) {
                 std::map<std::string, std::vector<std::string>> potential_resources_for_type;
+
                 for(auto w: e[i_e].getWildCards()){
                     potential_resources_for_type[w] = r.getResourcesOfType(w);
                     //We encode a new lit for
@@ -51,6 +53,7 @@ public: Encoder(
                         s.event = e[i_e].getId();
                         s.assigned_resources = {r.getPrt(candidate)};
                         s.lit = lit;
+                        s.has_wildcard = true;
                         literal_map[lit] = s;
                         //We store literal of this wildcards for that time.
                         wildcard_clashes[candidate].push_back(lit);
@@ -60,6 +63,20 @@ public: Encoder(
                         lit++;
                     }
                 }
+                //In some cases there are no wildcard resources to fulfill
+                //All we need is to place the events on the grid.
+                if(potential_resources_for_type.empty()){
+                    Solution_event s;
+                    s.time = t[i_t].getId();
+                    s.event = e[i_e].getId();
+                    s.lit = lit;
+                    s.has_wildcard = false;
+                    literal_map[lit] =s;
+                    lits_of_event_at_time[s.event].push_back(lit);
+                    std::cout << "c Encoded LIT " << lit << std::endl;
+                    lit++;
+                }
+
                 //We handle clash constraints
                 std::cout << "c Encoding clash constraints" << std::endl;
                 std::vector<std::set<std::string>> clashing_events = r.getAllClashingEvents();
@@ -121,7 +138,10 @@ public: Encoder(
                     }
                     std::cout << "c "<< s.time << " ";
                     e.getEvent(s.event).printEvent();
-                    std::cout << s.assigned_resources[0]->getId() << std::endl;
+                    if(s.has_wildcard){
+                        std::cout << s.assigned_resources[0]->getId();
+                    }
+                    std::cout << std::endl;
                 }
             }
         }
