@@ -9,8 +9,6 @@
 
 int main(int argc, char** argv)
 {
-
-
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file(argv[1]);
     if (!result)

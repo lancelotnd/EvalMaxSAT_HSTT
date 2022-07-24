@@ -82,11 +82,14 @@ public: Encoder(
                 std::vector<std::set<std::string>> clashing_events = r.getAllClashingEvents();
                 for(auto & set_events : clashing_events){
                     std::vector<int> v;
-                    for(auto & event : set_events) {
-                        v.insert(v.end(), lits_of_event_at_time[event].begin(), lits_of_event_at_time[event].end());
+                    if(!set_events.empty()){
+                        for(auto & event : set_events) {
+                            std::cout << event << " ";
+                            v.insert(v.end(), lits_of_event_at_time[event].begin(), lits_of_event_at_time[event].end());
+                        }
+                        std::cout << std::endl;
+                        clashes.insert(v);
                     }
-                    clashes.insert(v);
-
                 }
                 //Pushing the wildcard_clashes
                 for(auto & c : wildcard_clashes){
@@ -122,7 +125,7 @@ public: Encoder(
     std::cout << "c ================================================" << std::endl;
     std::cout << "c There are " << nvar << " pure literals" << std::endl;
     std::cout << "c Whith constraints, there are " <<  lit << " literals, " << lit-nvar << " of which are soft. "  << " NB CLAUSES : " <<nb_clauses<< std::endl;
-#if 0
+#if 1
     std::cout << "c START SOLVING" << std::endl;
     int return_code = ipamir_solve(solver);
     if(return_code == 30){
@@ -160,15 +163,15 @@ public: Encoder(
             std::cout << "h ";
             for(auto &l :v){
                 std::cout << l << " ";
-                //ipamir_add_hard(solver, l);
+                ipamir_add_hard(solver, l);
             }
             std::cout << -top_lit << " 0" << std::endl;
-            //ipamir_add_hard(solver, -top_lit);
-            //ipamir_add_hard(solver, 0);
+            ipamir_add_hard(solver, -top_lit);
+            ipamir_add_hard(solver, 0);
             nb_clauses++;
         }
         std::cout  << "1 " << -top_lit << " 0" << std::endl;
-        //ipamir_add_soft_lit(solver, -top_lit, 1);
+        ipamir_add_soft_lit(solver, -top_lit, 1);
         c.clear();
     }
 
