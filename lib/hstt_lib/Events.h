@@ -42,7 +42,7 @@ public: Event(pugi::xml_node e, Resources &all_resources){
             if(res.res_ref != ""){
                 res.is_wild_card = false;
                 res.res_ptr = all_resources.getPrt(res.res_ref);
-                res.res_ptr->associateEvent(id);
+                res.res_ptr->associateEvent(id,duration);
             } else {
                 res.is_wild_card = true;
             }

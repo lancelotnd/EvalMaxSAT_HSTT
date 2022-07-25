@@ -5,7 +5,7 @@
 #include "lib/hstt_lib/Resources.h"
 #include "lib/hstt_lib/Events.h"
 #include "lib/hstt_lib/Constraints.h"
-#include "lib/hstt_lib/encoder.h"
+#include "lib/hstt_lib/encoder_v2.h"
 
 int main(int argc, char** argv)
 {
@@ -20,7 +20,7 @@ int main(int argc, char** argv)
         Resources r = Resources(instance);
         Events e = Events(instance, r);
         Constraints c = Constraints(instance);
-        Encoder encoder = Encoder(t,r,e,c);
+        EncoderV2 encoder = EncoderV2(t,r,e,c);
         encoder.encode();
     }
 

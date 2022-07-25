@@ -125,7 +125,6 @@ public: Encoder(
     std::cout << "c ================================================" << std::endl;
     std::cout << "c There are " << nvar << " pure literals" << std::endl;
     std::cout << "c Whith constraints, there are " <<  lit << " literals, " << lit-nvar << " of which are soft. "  << " NB CLAUSES : " <<nb_clauses<< std::endl;
-#if 1
     std::cout << "c START SOLVING" << std::endl;
     int return_code = ipamir_solve(solver);
     if(return_code == 30){
@@ -154,7 +153,7 @@ public: Encoder(
     } else {
         std::cout << "UNSAT" << std::endl;
     }
-#endif
+
     }
 
     void push_clause_to_solver(void* solver, ClauseSet &c, int & top_lit){

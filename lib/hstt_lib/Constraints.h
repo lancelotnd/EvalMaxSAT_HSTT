@@ -23,6 +23,7 @@ public: Constraint(pugi::xml_node node){
         weight = std::stoi(node.child("Weight").child_value());
         required = bool_map[node.child("Required").child_value()];
         cost_function = cost_map[node.child("CostFunction").child_value()];
+        std::cout << "Constructed " << name << " constraint" << std::endl;
     }
 
     virtual ~Constraint() = default;
@@ -62,7 +63,6 @@ public: explicit AssignTimeConstraint(pugi::xml_node node) : Constraint(node) {
 class SplitEventsConstraint : public Constraint {
 
 public: explicit SplitEventsConstraint(pugi::xml_node node) : Constraint(node) {
-
 }
 };
 
@@ -96,8 +96,42 @@ public: explicit PreferResourcesConstraint(pugi::xml_node node) : Constraint(nod
  */
 
 class PreferTimesConstraint : public Constraint {
+    std::vector<std::string> applies;
+    std::vector<std::string> times_ref;
+    std::vector<std::string> time_groups_ref;
 
 public: explicit PreferTimesConstraint(pugi::xml_node node) : Constraint(node) {
+        for(pugi::xml_node rg : node.child("AppliesTo").children()){
+            for (pugi::xml_node event : rg.children()){
+                applies.push_back(event.attribute("Reference").as_string());
+            }
+        }
+
+        for(pugi::xml_node time: node.child("Times").children()){
+            times_ref.push_back(time.attribute("Reference").as_string());
+        }
+        for(pugi::xml_node time: node.child("TimeGroups").children()){
+            time_groups_ref.push_back(time.attribute("Reference").as_string());
+        }
+        std::cout << ">> Applies to : ";
+        for (auto e:applies){
+            std::cout << e << " ";
+        }
+        std::cout<< std::endl;
+
+        std::cout << ">> Preferred times : ";
+
+        for (auto e:times_ref){
+            std::cout << e << " ";
+        }
+        std::cout<< std::endl;
+
+        std::cout << ">> Preferred timeGroups : ";
+
+        for (auto e:time_groups_ref){
+            std::cout << e << " ";
+        }
+        std::cout<< std::endl;
 
     }
 };
