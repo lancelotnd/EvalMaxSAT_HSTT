@@ -130,7 +130,7 @@ public: Encoder(
     if(return_code == 30){
         std::cout << "c Satisfiable" << std::endl;
         std::string previous_time = "";
-        for(int i = 0; i< lit; i++){
+        for(int i = 0; i < lit; i++){
             if(ipamir_val_lit(solver, i+1) > 0){
                 int literal = ipamir_val_lit(solver, i+1);
                 if(literal <= nvar){

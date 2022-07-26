@@ -19,7 +19,7 @@ class Time {
 
 
 
-public: Time(pugi::xml_node t){
+public: Time(pugi::xml_node t) {
         id = t.attribute("Id").as_string();
         name = t.child("Name").child_value();
         ref_day = t.child("Day").attribute("Reference").as_string();
@@ -29,7 +29,7 @@ public: Time(pugi::xml_node t){
         }
     }
 
-    std::string getId(){
+    std::string getId() {
         return id;
     }
 

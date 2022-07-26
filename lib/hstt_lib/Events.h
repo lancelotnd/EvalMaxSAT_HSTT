@@ -9,6 +9,7 @@
 #include <map>
 #include "../../lib/pugixml-1.12/src/pugixml.hpp"
 #include "Resources.h"
+#pragma once
 
 struct ResourceEvent {
     std::string res_ref;
@@ -19,6 +20,10 @@ struct ResourceEvent {
 };
 
 class Event {
+    int min_duration = 0;
+    int max_duration = 0;
+    int min_amount = 0;
+    int max_amount = 0;
     int duration;
     std::string name;
     std::string id;
@@ -26,23 +31,24 @@ class Event {
     std::vector<std::string> event_groups_ref;
     std::vector<ResourceEvent> resources;
 
-public: Event(pugi::xml_node e, Resources &all_resources){
+public:
+    Event(pugi::xml_node e, Resources &all_resources) {
         id = e.attribute("Id").as_string();
         name = e.child("Name").child_value();
         duration = std::stoi(e.child("Duration").child_value());
         course_ref = e.child("Course").attribute("Reference").as_string();
 
-        for(pugi::xml_node eg: e.child("EventGroups").children()){
+        for (pugi::xml_node eg: e.child("EventGroups").children()) {
             event_groups_ref.push_back(eg.attribute("Reference").as_string());
         }
 
-        for(pugi::xml_node r: e.child("Resources").children()){
+        for (pugi::xml_node r: e.child("Resources").children()) {
             ResourceEvent res;
             res.res_ref = r.attribute("Reference").as_string();
-            if(res.res_ref != ""){
+            if (res.res_ref != "") {
                 res.is_wild_card = false;
                 res.res_ptr = all_resources.getPrt(res.res_ref);
-                res.res_ptr->associateEvent(id,duration);
+                res.res_ptr->associateEvent(id, duration);
             } else {
                 res.is_wild_card = true;
             }
@@ -52,12 +58,25 @@ public: Event(pugi::xml_node e, Resources &all_resources){
         }
     }
 
-    Event(){
+    Event() {
     }
 
     std::string getId() const {
         return id;
     }
+
+    std::vector<std::string> getEventGroups() {
+        return event_groups_ref;
+    }
+
+    void addSplitConstraint(int md, int xd, int ma, int xa)
+    {
+        min_duration = md;
+        max_duration = xd;
+        min_amount = ma;
+        max_amount = xa;
+    }
+
 
     void printEvent() const {
         std::cout << id << " : " << name << " ";
@@ -84,17 +103,18 @@ public: Event(pugi::xml_node e, Resources &all_resources){
 
 class Events {
     std::map<std::string, std::string> event_groups;
+    std::map<std::string, std::vector<Event*>> event_of_groups;
     std::map<std::string, Event> map_events;
     std::vector<std::string> map_keys;
     int nb_event;
 
 
-public: Events(pugi::xml_node events_node, Resources& r){
-        for(pugi::xml_node e : events_node.child("Events").children()){
-            if ((std::string) e.name() == "EventGroups"){
+public: Events(pugi::xml_node events_node, Resources& r) {
+        for(pugi::xml_node e : events_node.child("Events").children()) {
+            if ((std::string) e.name() == "EventGroups") {
                 addEventGroups(e);
             }
-            else if ((std::string) e.name() == "Event"){
+            else if ((std::string) e.name() == "Event") {
                 addEvent(e, r);
             }
 
@@ -113,6 +133,11 @@ public: Events(pugi::xml_node events_node, Resources& r){
         Event e = Event(event_node, r);
         map_events[e.getId()] = e;
         map_keys.push_back(e.getId());
+        auto v = e.getEventGroups();
+        for (const auto & g:v){
+            event_of_groups[g].push_back(&map_events[e.getId()]);
+        }
+
     }
 
     size_t size(){
@@ -121,6 +146,10 @@ public: Events(pugi::xml_node events_node, Resources& r){
 
     Event & getEvent(std::string key){
         return map_events[key];
+    }
+
+    std::vector<Event*> getEventGroups(std::string group){
+        return event_of_groups[group];
     }
 
     Event & operator [](int i) {return map_events[map_keys[i]];}
