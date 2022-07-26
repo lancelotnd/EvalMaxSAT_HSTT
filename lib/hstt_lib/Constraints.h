@@ -41,6 +41,10 @@ class AssignResourceConstraint : public Constraint {
 public: explicit AssignResourceConstraint(pugi::xml_node node) : Constraint(node) {
 
     }
+
+    static std::string getClassName(){
+        return "AssignResourceConstraint";
+    }
 };
 
 /**
@@ -52,6 +56,10 @@ class AssignTimeConstraint : public Constraint {
 
 public: explicit AssignTimeConstraint(pugi::xml_node node) : Constraint(node) {
 
+    }
+
+    static std::string getClassName(){
+        return "AssignTimeConstraint";
     }
 };
 
@@ -73,7 +81,7 @@ class SplitEventsConstraint : public Constraint {
 public: explicit SplitEventsConstraint(pugi::xml_node node) : Constraint(node) {
         for(pugi::xml_node event : node.child("AppliesTo").child("Events").children()){
                 applies_to_events.push_back(event.attribute("Reference").as_string());
-            }
+        }
         for(pugi::xml_node event_group : node.child("AppliesTo").child("EventGroups").children()){
             applies_to_groups.push_back(event_group.attribute("Reference").as_string());
         }
@@ -84,6 +92,10 @@ public: explicit SplitEventsConstraint(pugi::xml_node node) : Constraint(node) {
 
         std::cout << "min_amount " << min_amount << ", max_amount " << max_amount << std::endl;
         std::cout << "min_duration " << min_duration << ", max_duration " << max_duration << std::endl;
+    }
+
+    static std::string getClassName(){
+        return "SplitEventConstraint";
     }
 };
 
@@ -97,6 +109,10 @@ class DistributeSplitEventsConstraint : public Constraint {
 public: explicit DistributeSplitEventsConstraint(pugi::xml_node node) : Constraint(node) {
 
     }
+
+    static std::string getClassName(){
+        return "DistributeSplitEventsConstraint";
+    }
 };
 
 /**
@@ -108,6 +124,10 @@ class PreferResourcesConstraint : public Constraint {
 
 public: explicit PreferResourcesConstraint(pugi::xml_node node) : Constraint(node) {
 
+    }
+
+    static std::string getClassName(){
+        return "PreferResourcesConstraint";
     }
 };
 
@@ -155,6 +175,11 @@ public: explicit PreferTimesConstraint(pugi::xml_node node) : Constraint(node) {
         std::cout<< std::endl;
 
     }
+
+
+    static std::string getClassName(){
+        return "PreferTimesConstraint";
+    }
 };
 
 /**
@@ -170,6 +195,11 @@ class AvoidSplitAssignmentsConstraint : public Constraint {
 public: explicit AvoidSplitAssignmentsConstraint(pugi::xml_node node) : Constraint(node) {
 
     }
+
+
+    static std::string getClassName(){
+        return "AvoidSplitAssignmentsConstraint";
+    }
 };
 
 /**
@@ -182,6 +212,10 @@ class SpreadEventsConstraint : public Constraint {
 public: explicit SpreadEventsConstraint(pugi::xml_node node) : Constraint(node) {
 
     }
+
+    static std::string getClassName(){
+        return "SpreadEventsConstraint";
+    }
 };
 
 /**
@@ -191,6 +225,10 @@ class LinkEventsConstraint : public Constraint {
 
 public: explicit LinkEventsConstraint(pugi::xml_node node) : Constraint(node) {
 
+    }
+
+    static std::string getClassName(){
+        return "LinkEventsConstraint";
     }
 };
 
@@ -204,6 +242,11 @@ class OrderEventsConstraint : public Constraint {
 public: explicit OrderEventsConstraint(pugi::xml_node node) : Constraint(node) {
 
     }
+
+
+    static std::string getClassName(){
+        return "OrderEventsConstraint";
+    }
 };
 
 /**
@@ -216,6 +259,10 @@ class AvoidClashesConstraint : public Constraint {
 public: explicit AvoidClashesConstraint(pugi::xml_node node) : Constraint(node) {
 
     }
+
+    static std::string getClassName(){
+        return "AvoidClashesConstraint";
+    }
 };
 
 /**
@@ -226,6 +273,10 @@ class AvoidUnavailableTimesConstraint : public Constraint {
 
 public: explicit AvoidUnavailableTimesConstraint(pugi::xml_node node) : Constraint(node) {
 
+    }
+
+    static std::string getClassName(){
+        return "AvoidUnavailableTimesConstraint";
     }
 };
 
@@ -251,6 +302,10 @@ class LimitIdleTimesConstraint : public Constraint {
 public: explicit LimitIdleTimesConstraint(pugi::xml_node node) : Constraint(node) {
 
     }
+
+    static std::string getClassName(){
+        return "LimitIdleTimesConstraint";
+    }
 };
 
 /**
@@ -264,6 +319,10 @@ class ClusterBusyTimesConstraint : public Constraint {
 public: explicit ClusterBusyTimesConstraint(pugi::xml_node node) : Constraint(node) {
 
     }
+
+    static std::string getClassName(){
+        return "ClusterBusyTimesConstraint";
+    }
 };
 
 /**
@@ -276,6 +335,10 @@ class LimitBusyTimesConstraint : public Constraint {
 
 public: explicit LimitBusyTimesConstraint(pugi::xml_node node) : Constraint(node) {
 
+    }
+
+    static std::string getClassName(){
+        return "LimitBusyTimesConstraint";
     }
 };
 
@@ -301,6 +364,11 @@ class LimitWorkloadConstraint : public Constraint {
 public: explicit LimitWorkloadConstraint(pugi::xml_node node) : Constraint(node) {
 
     }
+
+    static std::string getClassName(){
+        return "LimitWorkloadConstraint";
+    }
+
 };
 
 
