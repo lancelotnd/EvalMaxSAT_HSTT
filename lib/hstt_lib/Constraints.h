@@ -61,9 +61,30 @@ public: explicit AssignTimeConstraint(pugi::xml_node node) : Constraint(node) {
  */
 
 class SplitEventsConstraint : public Constraint {
+    std::vector<std::string> applies_to_events;
+    std::vector<std::string> applies_to_groups;
+    int min_duration = 0;
+    int max_duration = 0;
+    int min_amount = 0;
+    int max_amount = 0;
+
+
 
 public: explicit SplitEventsConstraint(pugi::xml_node node) : Constraint(node) {
-}
+        for(pugi::xml_node event : node.child("AppliesTo").child("Events").children()){
+                applies_to_events.push_back(event.attribute("Reference").as_string());
+            }
+        for(pugi::xml_node event_group : node.child("AppliesTo").child("EventGroups").children()){
+            applies_to_groups.push_back(event_group.attribute("Reference").as_string());
+        }
+        min_duration = atoi(node.child("MinimumDuration").child_value());
+        max_duration = atoi(node.child("MaximumDuration").child_value());
+        min_amount = atoi(node.child("MinimumAmount").child_value());
+        max_amount = atoi(node.child("MaximumAmount").child_value());
+
+        std::cout << "min_amount " << min_amount << ", max_amount " << max_amount << std::endl;
+        std::cout << "min_duration " << min_duration << ", max_duration " << max_duration << std::endl;
+    }
 };
 
 /**
