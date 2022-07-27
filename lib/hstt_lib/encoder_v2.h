@@ -88,19 +88,26 @@ public: EncoderV2(
         }
 
 
-        void propagate_constraints(){
-            for(int i =0; i < c.size(); i++){
+        void propagate_constraints()
+        {
+            for(int i =0; i < c.size(); i++) {
+                Constraint * constraint = c[i].get();
                 if(c[i]->getClassName() == "SplitEventConstraint") {
                     std::set<Event*> se = c[i]->getApplied(e);
-                    std::cout << "Propagating split for those events";
+                    std::cout << "Propagating split for those events ";
                     for(auto e:se){
-                        Constraint * cunt = c[i].get();
-                        SplitEventsConstraint *s = static_cast<SplitEventsConstraint*>(cunt);
+                        SplitEventsConstraint *s = static_cast<SplitEventsConstraint*>(constraint);
                         auto v = s->getMinMax();
                         e->addSplitConstraint(v[0], v[1], v[2], v[3]);
                         std::cout << e->getId() << " ";
                     }
                     std::cout << std::endl;
+                } else if(c[i]->getClassName() == "PreferTimesConstraint") {
+                    PreferTimesConstraint * pref_constraint = static_cast<PreferTimesConstraint*>(constraint);
+                    std::set<Event*> se = pref_constraint->getApplied(e);
+                    for(auto e:se) {
+                        e->addTimePreference(pref_constraint->getTimes(t));
+                    }
                 }
             }
 

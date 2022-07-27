@@ -30,6 +30,7 @@ class Event {
     std::string course_ref;
     std::vector<std::string> event_groups_ref;
     std::vector<ResourceEvent> resources;
+    std::set<Time*> preffered_time;
 
 public:
     Event(pugi::xml_node e, Resources &all_resources) {
@@ -73,8 +74,12 @@ public:
     {
         min_duration = md;
         max_duration = xd;
-        min_amount = ma;
-        max_amount = xa;
+        min_amount   = ma;
+        max_amount   = xa;
+    }
+
+    void addTimePreference(std::set<Time*> _) {
+        preffered_time = _;
     }
 
 
@@ -137,8 +142,9 @@ public: Events(pugi::xml_node events_node, Resources& r) {
         for (const auto & g:v){
             event_of_groups[g].push_back(&map_events[e.getId()]);
         }
-
     }
+
+
 
     size_t size(){
         return map_events.size();
