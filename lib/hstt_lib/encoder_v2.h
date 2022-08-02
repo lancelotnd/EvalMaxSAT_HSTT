@@ -73,40 +73,45 @@ public: EncoderV2(
                     }
                     kmto_encode_equalsN(top_lit, clauses, allTimes_for_resources,tmp->getTotalDuration());
 
-                    if(top_lit > 3yuhj000){
-                        break;
+
+                    for(auto clau:clauses.get_clauses()){
+                        for(auto l: clau){
+                            ipamir_add_hard(solver,l);
+                        }
+                        ipamir_add_hard(solver,0);
+                    }
+                    clauses.clear();
+                    int ret_code = ipamir_solve(solver);
+                    std::cout << ret_code << std::endl;
+                    if(ret_code == 30){
+
+                        for(auto ev: associatedEvents){
+                            int index_offset = ev->getIndexOffset();
+                            ev->printEvent();
+                            std::vector<std::string> allocated_slots;
+
+                            for( int i = index_offset; i< index_offset+100; i++) {
+                                if (ipamir_val_lit(solver, i) > 0) {
+                                    int slot = ipamir_val_lit(solver, i) - (index_offset - 1);
+                                    allocated_slots.push_back(t[slot - 1].getId());
+                                }
+                            }
+                            assert(allocated_slots.size() == ev->getDuration());
+                            for(auto slot :allocated_slots){
+                                std::cout << slot << " ";
+                            }
+                            std::cout << std::endl;
+
+                            std::cout << std::endl;
+
+                        }
+                        std::cout << std::endl;
                     }
                 }
             }
         }
-        for(auto clau:clauses.get_clauses()){
-            for(auto l: clau){
-                ipamir_add_hard(solver,l);
-            }
-            ipamir_add_hard(solver,0);
-        }
-        int ret_code = ipamir_solve(solver);
-        std::cout << ret_code << std::endl;
-        if(ret_code == 30){
-            std::cout << "SATISFIABLE" << std::endl;
 
-            for(int i=0; i<e.size(); i++){
-                Event &ev= e[i];
-                std::vector<int> solution = ev.getSolutionSet();
-                if(solution.empty()){
-                    std::cout << "NO ASSIGNMENT FOR " << ev.getId() << " uwu" << std::endl;
-                }
-                for(int slot: solution){
-                    std::cout << slot << std::endl;
-                    if(ipamir_val_lit(solver, slot) > 0){
-                        std::cout << ipamir_val_lit(solver,slot) << " ";
-                    }
-                    std::cout << -ipamir_val_lit(solver,slot) << " ";
 
-                }
-            }
-            std::cout << std::endl;
-        }
         }
 
 
@@ -124,14 +129,11 @@ public: EncoderV2(
                 Constraint * constraint = c[i].get();
                 if(c[i]->getClassName() == "SplitEventConstraint") {
                     std::set<Event*> se = c[i]->getApplied(e);
-                    std::cout << "Propagating split for those events ";
                     for(auto e:se){
                         SplitEventsConstraint *s = static_cast<SplitEventsConstraint*>(constraint);
                         auto v = s->getMinMax();
                         e->addSplitConstraint(v[0], v[1], v[2], v[3]);
-                        std::cout << e->getId() << " ";
                     }
-                    std::cout << std::endl;
                 } else if(c[i]->getClassName() == "PreferTimesConstraint") {
                     PreferTimesConstraint * pref_constraint = static_cast<PreferTimesConstraint*>(constraint);
                     std::set<Event*> se = pref_constraint->getApplied(e);

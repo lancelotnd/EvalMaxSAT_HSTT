@@ -35,6 +35,7 @@ class Event {
     std::vector<ResourceEvent> resources;
     std::set<Time*> preffered_time;
     std::vector<int> solution_time;
+    int index_offset;
 
 public:
     Event(pugi::xml_node e, Resources &all_resources) {
@@ -62,6 +63,9 @@ public:
             resources.push_back(res);
         }
     }
+    int getDuration(){
+        return duration;
+    }
 
     Event() {
     }
@@ -69,7 +73,10 @@ public:
     ~Event(){}
 
     void AssignTimes(Times &times, std::vector<int> &assignment, int& top_lit, ClauseSet &clauses){
-        if(min_duration != 0 || max_duration !=0) {
+        index_offset = assignment[0];
+        kmto_encode_equalsN(top_lit, clauses, assignment, duration);
+
+        if(min_duration != 0 && max_duration !=0) {
             ClauseSet c;
             std::vector<int> soft_lits;
             for(auto l : assignment){
@@ -80,9 +87,9 @@ public:
                 std::cout << "This event has preffered times and " << max_amount << " slots." << std::endl;
                     for(auto &time: preffered_time){
                         int index = time->getIndex();
-                        int duration = max_duration;
+                        int dur = max_duration;
                         std::vector<int> event_slot;
-                        for (int i = 0; i < duration; i++) {
+                        for (int i = 0; i < dur; i++) {
                             event_slot.push_back(assignment[index+i-1]);
                             //std::cout << assignment[index+i-1] << " ";
                         }
@@ -96,7 +103,7 @@ public:
                         }
                         c.clear();
                     }
-                kmto_encode_equalsN(top_lit,clauses,soft_lits,max_amount);
+               // kmto_encode_equalsN(top_lit,clauses,soft_lits,max_amount);
             }
 
         }
@@ -106,8 +113,8 @@ public:
         return id;
     }
 
-    std::vector<int> getSolutionSet() const {
-        return solution_time;
+    int getIndexOffset()  {
+        return index_offset;
     }
 
     std::vector<std::string> getEventGroups() {

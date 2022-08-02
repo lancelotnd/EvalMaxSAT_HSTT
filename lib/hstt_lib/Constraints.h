@@ -24,7 +24,6 @@ public: Constraint(pugi::xml_node node){
         weight = std::stoi(node.child("Weight").child_value());
         required = bool_map[node.child("Required").child_value()];
         cost_function = cost_map[node.child("CostFunction").child_value()];
-        std::cout << "Constructed " << name << " constraint" << std::endl;
     }
 
     virtual std::string getClassName(){
@@ -101,8 +100,6 @@ public: explicit SplitEventsConstraint(pugi::xml_node node) : Constraint(node) {
         min_amount   = atoi(node.child("MinimumAmount")  .child_value());
         max_amount   = atoi(node.child("MaximumAmount")  .child_value());
 
-        std::cout << "min_amount " << min_amount << ", max_amount " << max_amount << std::endl;
-        std::cout << "min_duration " << min_duration << ", max_duration " << max_duration << std::endl;
     }
 
     std::string getClassName() override {
@@ -190,22 +187,6 @@ public: explicit PreferTimesConstraint(pugi::xml_node node) : Constraint(node) {
         for(pugi::xml_node time: node.child("TimeGroups").children()){
             time_groups_ref.push_back(time.attribute("Reference").as_string());
         }
-
-
-        std::cout << ">> Preferred times : ";
-
-        for (auto e:times_ref){
-            std::cout << e << " ";
-        }
-        std::cout<< std::endl;
-
-        std::cout << ">> Preferred timeGroups : ";
-
-        for (auto e:time_groups_ref){
-            std::cout << e << " ";
-        }
-        std::cout<< std::endl;
-
     }
 
     std::set<Time*> getTimes(Times &t){
