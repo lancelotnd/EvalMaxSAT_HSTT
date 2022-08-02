@@ -15,8 +15,10 @@
  * we will put the events into the Resource's schedule.
  */
 
-#include "../pysat/mto.hh"
 #include <vector>
+#include "../../ipamir.h"
+#include "../pysat/clset.hh"
+#include "../pysat/cardenc/mto.hh"
 #include "../../ipamir.h"
 
 class EncoderV2 {
@@ -35,58 +37,86 @@ public: EncoderV2(
         std::cout << "c Constructed Encoder V2" << std::endl;
     }
 
-    void encode() {
+        void encode() {
+        void * solver = ipamir_init();
+        ClauseSet clauses;
+        std::map<std::string, int> starting_index_for_event;
+        int top_lit = 0;
+        std::vector<int> allTimes;
         propagate_constraints();
         std::map<std::string, std::string> allTypes = r.get_resources_types();
         for(auto &i : allTypes){
-            for(auto res: r.getResourcesOfType(i.first)){
-                void * solver = ipamir_init();
+            for(auto res: r.getResourcesOfType(i.first)) {
+                std::vector<int> allTimes_for_resources;
                 Resource * tmp = r.getPrt(res);
-                t.size();
-                std::vector<int> allTimes;
-                int top_lit = 0;
-                for(int i = 0; i <t.size(); i++){
-                    ipamir_add_hard(solver, i+1);
-                    allTimes.push_back(i+1);
-                    top_lit = i+1;
-                }
-                ipamir_add_hard(solver,0);
-                ClauseSet c;
-                int nvar = top_lit;
-                std::vector<int> durations = tmp->getDurations();
-                int dur = tmp->getTotalDuration();
-                if(dur > 0){
-                    kmto_encode_equalsN(top_lit, c, allTimes, dur);
-                    push_clause_to_solver(solver, c,top_lit);
+
+                if(!tmp->getClashingEvents().empty()){
                     tmp->printResource();
-                    std::cout << "Durations : ";
-                    for(auto l : durations){
-                        std::cout << l << " ";
-                    }
-                    int return_code = ipamir_solve(solver);
-                    std::cout << "return code is " << return_code<< std::endl;
-                    if(return_code == 30) {
-                        std::vector<int> allPeriods;
-                        std::cout << "Satisfiable" << std::endl;
-                        for(int i = 0; i < nvar; i++){
-                            int literal = ipamir_val_lit(solver, i+1);
-                            if(literal > 0)
-                            {
-                                allPeriods.push_back(literal);
-                                std::cout << literal << " ";
-                            }
+
+                    std::vector<Event*> associatedEvents = getEvents(tmp->getClashingEvents());
+                    std::map<int, std::vector<int>> same_time;
+                    for (auto & event: associatedEvents){
+                        int frozen_top_lit = top_lit;
+                        std::vector<int> this_resource_times;
+                        starting_index_for_event[event->getId()] = top_lit+1;
+
+                        for(int i = frozen_top_lit; i < frozen_top_lit+ t.size(); i++){
+                            this_resource_times.push_back(i+1);
+                            same_time[frozen_top_lit-i+1].push_back(i+1);
+                            top_lit = i+1;
                         }
-                        std::cout << std::endl;
-
-                        std::cout << std::endl;
-                        std::cout << "Cost " << ipamir_val_obj(solver)<< std::endl;
+                        allTimes_for_resources.insert(allTimes_for_resources.end(), this_resource_times.begin(), this_resource_times.end());
+                        event->AssignTimes(t, this_resource_times, top_lit, clauses);
                     }
+                    for(auto index: same_time){
+                        mto_encode_atmostN(top_lit, clauses,index.second,1);
+                    }
+                    kmto_encode_equalsN(top_lit, clauses, allTimes_for_resources,tmp->getTotalDuration());
 
+                    if(top_lit > 3yuhj000){
+                        break;
+                    }
                 }
-            }
             }
         }
+        for(auto clau:clauses.get_clauses()){
+            for(auto l: clau){
+                ipamir_add_hard(solver,l);
+            }
+            ipamir_add_hard(solver,0);
+        }
+        int ret_code = ipamir_solve(solver);
+        std::cout << ret_code << std::endl;
+        if(ret_code == 30){
+            std::cout << "SATISFIABLE" << std::endl;
 
+            for(int i=0; i<e.size(); i++){
+                Event &ev= e[i];
+                std::vector<int> solution = ev.getSolutionSet();
+                if(solution.empty()){
+                    std::cout << "NO ASSIGNMENT FOR " << ev.getId() << " uwu" << std::endl;
+                }
+                for(int slot: solution){
+                    std::cout << slot << std::endl;
+                    if(ipamir_val_lit(solver, slot) > 0){
+                        std::cout << ipamir_val_lit(solver,slot) << " ";
+                    }
+                    std::cout << -ipamir_val_lit(solver,slot) << " ";
+
+                }
+            }
+            std::cout << std::endl;
+        }
+        }
+
+
+        std::vector<Event*> getEvents(std::set<std::string> events){
+            std::vector<Event*> to_return;
+            for(auto & e_str: events){
+                to_return.push_back(&e.getEvent(e_str));
+            }
+            return to_return;
+        }
 
         void propagate_constraints()
         {
@@ -108,31 +138,14 @@ public: EncoderV2(
                     for(auto e:se) {
                         e->addTimePreference(pref_constraint->getTimes(t));
                     }
+
                 }
             }
-
         }
 
 
 
-    void push_clause_to_solver(void* solver, ClauseSet &c, int & top_lit){
-        top_lit++;
-        for(auto &v: c.get_clauses()){
-            //std::cout << "h ";
-            for(auto &l :v){
-               //std::cout << l << " ";
-                ipamir_add_hard(solver, l);
-            }
-            ipamir_add_hard(solver, -top_lit);
-            //std::cout << -top_lit << " 0" << std::endl;
 
-            ipamir_add_hard(solver, 0);
-            ipamir_add_soft_lit(solver,-top_lit, 100);
-            nb_clauses++;
-        }
-        //std::cout  << "1 " << -top_lit << " 0" << std::endl;
-        c.clear();
-    }
 
     };
 

@@ -12,6 +12,7 @@
 
 
 class Time {
+    int index;
     std::string name;
     std::string id;
     std::string ref_day;
@@ -35,8 +36,16 @@ public: Time(pugi::xml_node t) {
         return ref_timegroups;
     }
 
+    int getIndex(){
+        return index;
+    }
+
     std::string getId() {
         return id;
+    }
+
+    void setIndex(int i){
+        index = i;
     }
 
     void printTime() {
@@ -50,6 +59,7 @@ public: Time(pugi::xml_node t) {
 
 
 class Times {
+    int index = 1;
     std::map<std::string,std::string> timegroups;
     std::vector<std::string> times;
     std::map<std::string, Time> times_map;
@@ -87,6 +97,8 @@ public : Times(pugi::xml_node times_node)
 
     void addTime(pugi::xml_node time_node){
         Time t = Time(time_node);
+        t.setIndex(index);
+        index++;
         times.push_back(t.getId());
         times_map[t.getId()] = t;
         for(auto g: t.getGroups()){

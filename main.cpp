@@ -1,5 +1,6 @@
 #include "lib/pugixml-1.12/src/pugixml.hpp"
 #include <iostream>
+#include <cassert>
 #include <string.h>
 #include "lib/hstt_lib/Times.h"
 #include "lib/hstt_lib/Resources.h"

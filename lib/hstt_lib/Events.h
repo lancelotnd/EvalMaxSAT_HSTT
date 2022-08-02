@@ -9,6 +9,8 @@
 #include <map>
 #include "../../lib/pugixml-1.12/src/pugixml.hpp"
 #include "Resources.h"
+#include "../pysat/clset.hh"
+#include "../pysat/cardenc/mto.hh"
 #pragma once
 
 struct ResourceEvent {
@@ -25,12 +27,14 @@ class Event {
     int min_amount = 0;
     int max_amount = 0;
     int duration;
+
     std::string name;
     std::string id;
     std::string course_ref;
     std::vector<std::string> event_groups_ref;
     std::vector<ResourceEvent> resources;
     std::set<Time*> preffered_time;
+    std::vector<int> solution_time;
 
 public:
     Event(pugi::xml_node e, Resources &all_resources) {
@@ -62,8 +66,48 @@ public:
     Event() {
     }
 
+    ~Event(){}
+
+    void AssignTimes(Times &times, std::vector<int> &assignment, int& top_lit, ClauseSet &clauses){
+        if(min_duration != 0 || max_duration !=0) {
+            ClauseSet c;
+            std::vector<int> soft_lits;
+            for(auto l : assignment){
+                solution_time.push_back(l);
+            }
+
+            if(!preffered_time.empty()) {
+                std::cout << "This event has preffered times and " << max_amount << " slots." << std::endl;
+                    for(auto &time: preffered_time){
+                        int index = time->getIndex();
+                        int duration = max_duration;
+                        std::vector<int> event_slot;
+                        for (int i = 0; i < duration; i++) {
+                            event_slot.push_back(assignment[index+i-1]);
+                            //std::cout << assignment[index+i-1] << " ";
+                        }
+                        mto_encode_atleastN(top_lit, c,event_slot,(int) event_slot.size());
+                        top_lit++;
+                        soft_lits.push_back(-top_lit);
+                        for(auto cl : c.get_clauses()) {
+                            cl.push_back(-top_lit);
+                            clauses.add_clause(cl);
+
+                        }
+                        c.clear();
+                    }
+                kmto_encode_equalsN(top_lit,clauses,soft_lits,max_amount);
+            }
+
+        }
+    }
+
     std::string getId() const {
         return id;
+    }
+
+    std::vector<int> getSolutionSet() const {
+        return solution_time;
     }
 
     std::vector<std::string> getEventGroups() {
@@ -160,5 +204,3 @@ public: Events(pugi::xml_node events_node, Resources& r) {
 
     Event & operator [](int i) {return map_events[map_keys[i]];}
 };
-
-
