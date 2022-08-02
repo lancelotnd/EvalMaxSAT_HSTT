@@ -86,7 +86,6 @@ public:
 
         if(has_split_event_constraint){
             if(has_preffered_time){
-                std::cout << id << " has split and preffered constraints. Easy dub" << std::endl;
                 for(auto &time: preffered_time){
                     int index = time->getIndex();
                     int dur = max_duration;
@@ -94,6 +93,7 @@ public:
                     for (int i = 0; i < dur; i++) {
                         event_slot.push_back(assignment[index+i-1]);
                     }
+                    add_padding(assignment[0], event_slot,times);
                     mto_encode_atleastN(top_lit, c,event_slot,(int) event_slot.size());
                     top_lit++;
                     soft_lits.push_back(-top_lit);
@@ -104,10 +104,7 @@ public:
                     }
                     c.clear();
                 }
-                std::cout << "Max  amount is : " << max_amount << std::endl;
-                std::cout << "Min  amount is : " << min_amount << std::endl;
-                std::cout << "Max  duration is : " << max_duration << std::endl;
-                std::cout << "Min  duration is : " << min_duration  << std::endl;
+
                 if(max_amount > 0) {
                     kmto_encode_equalsN(top_lit,clauses,soft_lits,max_amount);
                 }
@@ -117,12 +114,14 @@ public:
             }
         } else {
             if(has_preffered_time){
-                std::cout << id << " has NO SPLIT and preffered constraints. WEIRD" << std::endl;
             } else{
                 std::cout << id << " has NO SPLIT and NO PREFERRED CONSTRAINTS. WAT????" << std::endl;
             }
         }
     }
+
+
+
 
     std::string getId() const {
         return id;
@@ -168,6 +167,34 @@ public:
             }
         }
         return toReturn;
+    }
+
+private:
+    /**
+     * This function ensures that a sub event has no other sub event
+     * immediatly after or before as it would only be one big subevent.
+     */
+
+    void add_padding(int index_offset, std::vector<int>& times, Times &t){
+        int offset = index_offset -1;
+
+        int start = times[0];
+        int end = times[times.size()-1];
+        int before_padding = start-1;
+        int after_padding = end+1;
+
+        if(before_padding-offset > 0){
+            if(t[before_padding-offset-1].getDay() ==
+                t[start-offset-1].getDay()){
+                times.push_back(-before_padding);
+            }
+        }
+        if(after_padding-offset <= t.size()){
+            if(t[after_padding-offset-1].getDay() ==
+            t[end-offset-1].getDay()){
+                times.push_back(-after_padding);
+            }
+        }
     }
 
 };

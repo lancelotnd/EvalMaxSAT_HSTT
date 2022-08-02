@@ -36,6 +36,10 @@ public: Time(pugi::xml_node t) {
         return ref_timegroups;
     }
 
+    std::string getDay(){
+        return ref_day;
+    }
+
     int getIndex(){
         return index;
     }

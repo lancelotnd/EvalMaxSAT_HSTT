@@ -20,6 +20,7 @@
 #include "../pysat/clset.hh"
 #include "../pysat/cardenc/mto.hh"
 #include "../../ipamir.h"
+#include "print_schedule.h"
 
 class EncoderV2 {
     Times& t;
@@ -81,27 +82,27 @@ public: EncoderV2(
                     }
                     clauses.clear();
                     int ret_code = ipamir_solve(solver);
+                    assert(ret_code ==30);
                     if(ret_code == 30){
+                        PrintSchedule printer(tmp->getId());
 
                         for(auto ev: associatedEvents){
                             int index_offset = ev->getIndexOffset();
-                            ev->printEvent();
+                            std::vector<int> allocated_slot_id;
                             std::vector<std::string> allocated_slots;
 
                             for( int i = index_offset; i< index_offset+100; i++) {
                                 if (ipamir_val_lit(solver, i) > 0) {
                                     int slot = ipamir_val_lit(solver, i) - (index_offset - 1);
+                                    allocated_slot_id.push_back(slot-1);
                                     allocated_slots.push_back(t[slot - 1].getId());
                                 }
                             }
+                            printer.add_course(ev->getId(), allocated_slot_id);
                             assert(allocated_slots.size() == ev->getDuration());
-                            for(auto slot :allocated_slots){
-                                std::cout << slot << " ";
-                            }
-                            std::cout << "(" << allocated_slots.size() <<" periods)"<< std::endl;
-
                         }
-                        std::cout << std::endl;
+                        printer.print();
+
                     }
                 }
             }
@@ -136,15 +137,9 @@ public: EncoderV2(
                     for(auto e:se) {
                         e->addTimePreference(pref_constraint->getTimes(t));
                     }
-
                 }
             }
         }
-
-
-
-
-
     };
 
 
