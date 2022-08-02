@@ -38,7 +38,6 @@ public: EncoderV2(
     }
 
         void encode() {
-        void * solver = ipamir_init();
         ClauseSet clauses;
         std::map<std::string, int> starting_index_for_event;
         int top_lit = 0;
@@ -71,7 +70,7 @@ public: EncoderV2(
                     for(auto index: same_time){
                         mto_encode_atmostN(top_lit, clauses,index.second,1);
                     }
-                    kmto_encode_equalsN(top_lit, clauses, allTimes_for_resources,tmp->getTotalDuration());
+                    void * solver = ipamir_init();
 
 
                     for(auto clau:clauses.get_clauses()){
@@ -82,7 +81,6 @@ public: EncoderV2(
                     }
                     clauses.clear();
                     int ret_code = ipamir_solve(solver);
-                    std::cout << ret_code << std::endl;
                     if(ret_code == 30){
 
                         for(auto ev: associatedEvents){
@@ -100,9 +98,7 @@ public: EncoderV2(
                             for(auto slot :allocated_slots){
                                 std::cout << slot << " ";
                             }
-                            std::cout << std::endl;
-
-                            std::cout << std::endl;
+                            std::cout << "(" << allocated_slots.size() <<" periods)"<< std::endl;
 
                         }
                         std::cout << std::endl;

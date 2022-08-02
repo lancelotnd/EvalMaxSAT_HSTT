@@ -74,24 +74,39 @@ public:
 
     void AssignTimes(Times &times, std::vector<int> &assignment, int& top_lit, ClauseSet &clauses){
         index_offset = assignment[0];
+        //First there shall be exactly *n* periods allocated where *n* is the total event duration.
         kmto_encode_equalsN(top_lit, clauses, assignment, duration);
 
-        if(min_duration != 0 && max_duration !=0) {
-            ClauseSet c;
-            std::vector<int> soft_lits;
-            for(auto l : assignment){
-                solution_time.push_back(l);
-            }
+        ClauseSet c;
+        std::vector<int> soft_lits;
 
+        bool has_split_event_constraint = !((min_duration == 0) && (max_duration == 0) && (min_amount == 0) && (max_amount));
+        bool has_preffered_time = !preffered_time.empty();
+
+
+        if(has_split_event_constraint){
+            if(has_preffered_time){
+                std::cout << id << " has split and preffered constraints. Easy dub" << std::endl;
+            } else{
+                std::cout << id << " has split BUT NO PREFERRED TIME. ffs" << std::endl;
+            }
+        } else {
+            if(has_preffered_time){
+                std::cout << id << " has NO SPLIT and preffered constraints. WEIRD" << std::endl;
+            } else{
+                std::cout << id << " has NO SPLIT and NO PREFERRED CONSTRAINTS. WAT????" << std::endl;
+            }
+        }
+
+
+        if(min_duration != 0 && max_duration !=0) {
             if(!preffered_time.empty()) {
-                std::cout << "This event has preffered times and " << max_amount << " slots." << std::endl;
                     for(auto &time: preffered_time){
                         int index = time->getIndex();
                         int dur = max_duration;
                         std::vector<int> event_slot;
                         for (int i = 0; i < dur; i++) {
                             event_slot.push_back(assignment[index+i-1]);
-                            //std::cout << assignment[index+i-1] << " ";
                         }
                         mto_encode_atleastN(top_lit, c,event_slot,(int) event_slot.size());
                         top_lit++;
@@ -135,7 +150,7 @@ public:
 
 
     void printEvent() const {
-        std::cout << id << " : " << name << " ";
+        std::cout << id << " : ";
         for(auto r : resources) {
             std::cout << "> " << r.res_ref << " " << r.res_type_ref << " ";
         }

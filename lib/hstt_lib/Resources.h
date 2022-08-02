@@ -49,7 +49,7 @@ public: Resource(pugi::xml_node t){
     }
 
     Resource() {
-        //Default constructor required for maps.q
+        //Default constructor required for maps.
     }
 
     std::set<std::string> getClashingEvents(){
@@ -83,7 +83,7 @@ public: Resource(pugi::xml_node t){
     }
 
     void printResource() {
-        std::cout << id << " : " << name << ", " << ref_res_type <<" Duration : " << total_scheduled_duration <<  std::endl;
+        std::cout << id << " : " << name << ", " << ref_res_type <<" Duration : " << total_scheduled_duration << " periods" << std::endl;
         for(auto e :ref_res_group) {
             std::cout << "> " << e << std::endl;
         }
