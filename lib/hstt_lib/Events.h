@@ -80,13 +80,38 @@ public:
         ClauseSet c;
         std::vector<int> soft_lits;
 
-        bool has_split_event_constraint = !((min_duration == 0) && (max_duration == 0) && (min_amount == 0) && (max_amount));
+        bool has_split_event_constraint = !((min_duration == 0) && (max_duration == 0) && (min_amount == 0) && (max_amount == 0));
         bool has_preffered_time = !preffered_time.empty();
 
 
         if(has_split_event_constraint){
             if(has_preffered_time){
                 std::cout << id << " has split and preffered constraints. Easy dub" << std::endl;
+                for(auto &time: preffered_time){
+                    int index = time->getIndex();
+                    int dur = max_duration;
+                    std::vector<int> event_slot;
+                    for (int i = 0; i < dur; i++) {
+                        event_slot.push_back(assignment[index+i-1]);
+                    }
+                    mto_encode_atleastN(top_lit, c,event_slot,(int) event_slot.size());
+                    top_lit++;
+                    soft_lits.push_back(-top_lit);
+                    for(auto cl : c.get_clauses()) {
+                        cl.push_back(top_lit);
+                        clauses.add_clause(cl);
+
+                    }
+                    c.clear();
+                }
+                std::cout << "Max  amount is : " << max_amount << std::endl;
+                std::cout << "Min  amount is : " << min_amount << std::endl;
+                std::cout << "Max  duration is : " << max_duration << std::endl;
+                std::cout << "Min  duration is : " << min_duration  << std::endl;
+                if(max_amount > 0) {
+                    kmto_encode_equalsN(top_lit,clauses,soft_lits,max_amount);
+                }
+
             } else{
                 std::cout << id << " has split BUT NO PREFERRED TIME. ffs" << std::endl;
             }
@@ -96,31 +121,6 @@ public:
             } else{
                 std::cout << id << " has NO SPLIT and NO PREFERRED CONSTRAINTS. WAT????" << std::endl;
             }
-        }
-
-
-        if(min_duration != 0 && max_duration !=0) {
-            if(!preffered_time.empty()) {
-                    for(auto &time: preffered_time){
-                        int index = time->getIndex();
-                        int dur = max_duration;
-                        std::vector<int> event_slot;
-                        for (int i = 0; i < dur; i++) {
-                            event_slot.push_back(assignment[index+i-1]);
-                        }
-                        mto_encode_atleastN(top_lit, c,event_slot,(int) event_slot.size());
-                        top_lit++;
-                        soft_lits.push_back(-top_lit);
-                        for(auto cl : c.get_clauses()) {
-                            cl.push_back(-top_lit);
-                            clauses.add_clause(cl);
-
-                        }
-                        c.clear();
-                    }
-               // kmto_encode_equalsN(top_lit,clauses,soft_lits,max_amount);
-            }
-
         }
     }
 
