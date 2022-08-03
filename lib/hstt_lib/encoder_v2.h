@@ -39,6 +39,7 @@ public: EncoderV2(
     }
 
         void encode() {
+        void * solver = ipamir_init();
         ClauseSet clauses;
         std::map<std::string, int> starting_index_for_event;
         int top_lit = 0;
@@ -71,7 +72,6 @@ public: EncoderV2(
                     for(auto index: same_time){
                         mto_encode_atmostN(top_lit, clauses,index.second,1);
                     }
-                    void * solver = ipamir_init();
 
 
                     for(auto clau:clauses.get_clauses()){
@@ -102,14 +102,11 @@ public: EncoderV2(
                             assert(allocated_slots.size() == ev->getDuration());
                         }
                         printer.print();
-
                     }
                 }
             }
         }
-
-
-        }
+    }
 
 
         std::vector<Event*> getEvents(std::set<std::string> events){
@@ -137,6 +134,9 @@ public: EncoderV2(
                     for(auto e:se) {
                         e->addTimePreference(pref_constraint->getTimes(t));
                     }
+                } else if("SpreadEventConstraint"){
+                    SpreadEventsConstraint * spreadConstraint = static_cast<SpreadEventsConstraint*>(constraint);
+
                 }
             }
         }
