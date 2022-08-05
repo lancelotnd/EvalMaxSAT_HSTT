@@ -21,6 +21,7 @@
 #include "../pysat/cardenc/mto.hh"
 #include "../../ipamir.h"
 #include "print_schedule.h"
+#include "solver.h"
 
 class EncoderV2 {
     Times& t;
@@ -39,10 +40,8 @@ public: EncoderV2(
     }
 
         void encode() {
-        void * solver = ipamir_init();
         ClauseSet clauses;
         std::map<std::string, int> starting_index_for_event;
-        int top_lit = 0;
         std::vector<int> allTimes;
         propagate_constraints();
         std::map<std::string, std::string> allTypes = r.get_resources_types();
@@ -52,25 +51,27 @@ public: EncoderV2(
                 Resource * tmp = r.getPrt(res);
 
                 if(!tmp->getClashingEvents().empty()){
+                    void * solver = ipamir_init();
+
                     tmp->printResource();
 
                     std::vector<Event*> associatedEvents = getEvents(tmp->getClashingEvents());
                     std::map<int, std::vector<int>> same_time;
                     for (auto & event: associatedEvents){
-                        int frozen_top_lit = top_lit;
+                        int frozen_top_lit = Solver::toplit;
                         std::vector<int> this_resource_times;
-                        starting_index_for_event[event->getId()] = top_lit+1;
+                        starting_index_for_event[event->getId()] = Solver::toplit+1;
 
                         for(int i = frozen_top_lit; i < frozen_top_lit+ t.size(); i++){
                             this_resource_times.push_back(i+1);
                             same_time[frozen_top_lit-i+1].push_back(i+1);
-                            top_lit = i+1;
+                            Solver::toplit = i+1;
                         }
                         allTimes_for_resources.insert(allTimes_for_resources.end(), this_resource_times.begin(), this_resource_times.end());
-                        event->AssignTimes(t, this_resource_times, top_lit, clauses);
+                        event->AssignTimes(t, this_resource_times, Solver::toplit, clauses);
                     }
                     for(auto index: same_time){
-                        mto_encode_atmostN(top_lit, clauses,index.second,1);
+                        mto_encode_atmostN(Solver::toplit, clauses,index.second,1);
                     }
 
 
