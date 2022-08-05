@@ -73,8 +73,8 @@ public: EncoderV2(
                     for(auto index: same_time){
                         mto_encode_atmostN(Solver::toplit, clauses,index.second,1);
                     }
-
-
+                    Solver s;
+                    s.solve(clauses);
                     for(auto clau:clauses.get_clauses()){
                         for(auto l: clau){
                             ipamir_add_hard(solver,l);
