@@ -67,6 +67,7 @@ class Times {
     std::map<std::string,std::string> timegroups;
     std::vector<std::string> times;
     std::map<std::string, Time> times_map;
+    std::map<std::string, std::vector<Time>> times_of_day;
     std::map<std::string, std::vector<Time*>> time_of_group;
 
 
@@ -105,6 +106,7 @@ public : Times(pugi::xml_node times_node)
         index++;
         times.push_back(t.getId());
         times_map[t.getId()] = t;
+        times_of_day[t.getDay()].emplace_back(t);
         for(auto g: t.getGroups()){
             time_of_group[g].push_back(&times_map[t.getId()]);
         }
@@ -114,6 +116,15 @@ public : Times(pugi::xml_node times_node)
         std::string id = tg.attribute("Id").as_string();
         std::string name = tg.child("Name").child_value();
         timegroups[id] = name;
+    }
+
+    std::vector<int> getIndexes_for_day(std::string day){
+        std::vector<int> to_return;
+        auto t = times_of_day[day];
+        for(auto time: t){
+            to_return.emplace_back(time.getIndex());
+        }
+        return to_return;
     }
 
     Time & operator [](int i) {return times_map[times[i]];}

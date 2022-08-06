@@ -125,19 +125,27 @@ public: EncoderV2(
                 if(c[i]->getClassName() == "SplitEventConstraint") {
                     std::set<Event*> se = c[i]->getApplied(e);
                     for(auto e:se){
-                        SplitEventsConstraint *s = static_cast<SplitEventsConstraint*>(constraint);
+                        SplitEventsConstraint *s = dynamic_cast<SplitEventsConstraint*>(constraint);
                         auto v = s->getMinMax();
                         e->addSplitConstraint(v[0], v[1], v[2], v[3]);
                     }
                 } else if(c[i]->getClassName() == "PreferTimesConstraint") {
-                    PreferTimesConstraint * pref_constraint = static_cast<PreferTimesConstraint*>(constraint);
+                    PreferTimesConstraint * pref_constraint = dynamic_cast<PreferTimesConstraint*>(constraint);
                     std::set<Event*> se = pref_constraint->getApplied(e);
                     for(auto e:se) {
                         e->addTimePreference(pref_constraint->getTimes(t));
                     }
-                } else if("SpreadEventConstraint"){
-                    SpreadEventsConstraint * spreadConstraint = static_cast<SpreadEventsConstraint*>(constraint);
-
+                } else if(c[i]->getClassName() =="SpreadEventsConstraint"){
+                    SpreadEventsConstraint * spreadConstraint = dynamic_cast<SpreadEventsConstraint*>(constraint);
+                    std::set<Event*> spread = spreadConstraint->getApplied(e);
+                    if(spread.size() != 1){
+                        std::cout<< "Looks like we have multiple events with spread event constraint" << std::endl;
+                        exit(0);
+                    } else {
+                        for(auto e:spread) {
+                            e->addSpreadEventConstraint(spreadConstraint->getMinMaxTimes());
+                        }
+                    }
                 }
             }
         }
