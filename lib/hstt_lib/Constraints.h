@@ -191,7 +191,7 @@ public: explicit PreferTimesConstraint(pugi::xml_node node) : Constraint(node) {
 
     std::set<Time*> getTimes(Times &t){
         std::set<Time*> to_return;
-        for(auto e : times_ref){
+        for(auto const &e : times_ref){
             to_return.insert(t.getTime(e));
         }
         for(auto e : time_groups_ref){
@@ -263,6 +263,22 @@ public: explicit SpreadEventsConstraint(pugi::xml_node node) : Constraint(node) 
 
     std::string getClassName() override {
         return "SpreadEventsConstraint";
+    }
+
+    std::set<Event*> getApplied(Events &events) override {
+        std::set<Event*> to_return;
+        for(auto e : applies_to_events){
+            to_return.insert(&events.getEvent(e));
+        }
+        for(auto e : applies_to_groups){
+            std::vector<Event*> a = events.getEventGroups(e);
+            to_return.insert(a.begin(), a.end());
+        }
+        return to_return;
+    }
+
+    void getMinMaxTimes() {
+
     }
 };
 
