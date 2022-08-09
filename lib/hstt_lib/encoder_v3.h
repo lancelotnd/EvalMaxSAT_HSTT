@@ -23,7 +23,7 @@
 #include "print_schedule.h"
 #include "solver.h"
 
-class EncoderV2 {
+class EncoderV3 {
     Times& t;
     Resources& r;
     Events& e;
@@ -31,16 +31,15 @@ class EncoderV2 {
     int nb_clauses = 0;
 
 
-public: EncoderV2(
+public: EncoderV3(
         Times &t,
         Resources &r,
         Events &e,
         Constraints &c) : c(c), r(r), e(e), t(t){
-        std::cout << "c Constructed Encoder V2" << std::endl;
+        std::cout << "c Constructed Encoder V3" << std::endl;
     }
 
         void encode() {
-        //ClauseSet clauses;
         std::map<std::string, int> starting_index_for_event;
         std::vector<int> allTimes;
         propagate_constraints();
@@ -51,8 +50,6 @@ public: EncoderV2(
                 Resource * tmp = r.getPrt(res);
 
                 if(!tmp->getClashingEvents().empty()){
-                    void * solver = ipamir_init();
-
                     tmp->printResource();
                     Solver s;
 
@@ -69,7 +66,7 @@ public: EncoderV2(
                             Solver::toplit = i+1;
                         }
                         allTimes_for_resources.insert(allTimes_for_resources.end(), this_resource_times.begin(), this_resource_times.end());
-                        event->AssignTimes(t, this_resource_times, Solver::toplit, s.getClauseSet());
+                        event->AssignTimes(t, this_resource_times, Solver::toplit, s.getClauseSet(), s);
                     }
                     for(auto index: same_time){
                         mto_encode_atmostN(Solver::toplit, s.getClauseSet(),index.second,1);

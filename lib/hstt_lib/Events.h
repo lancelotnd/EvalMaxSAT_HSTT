@@ -11,6 +11,7 @@
 #include "Resources.h"
 #include "../pysat/clset.hh"
 #include "../pysat/cardenc/mto.hh"
+#include "solver.h"
 #pragma once
 
 struct ResourceEvent {
@@ -74,7 +75,7 @@ public:
 
     ~Event(){}
 
-    void AssignTimes(Times &times, std::vector<int> &assignment, int& top_lit, ClauseSet &clauses) {
+    void AssignTimes(Times &times, std::vector<int> &assignment, int& top_lit, ClauseSet &clauses, Solver s) {
         index_offset = assignment[0];
         //First there shall be exactly *n* periods allocated where *n* is the total event duration.
         kmto_encode_equalsN(top_lit, clauses, assignment, duration);
@@ -88,6 +89,11 @@ public:
 
 
         if(has_spread_event_constraint){
+            std::cout << name << " ";
+            for(auto & sp: spread_time){
+                 std::cout << " [" << sp.first << " : " << sp.second.first << " " << sp.second.second << " ]," ;
+            }
+            std::cout << std::endl;
 
 
             for(auto k: spread_time) {
@@ -99,6 +105,7 @@ public:
                     std::cout << "Oups we didnt plan for that. " << std::endl;
                 }
                 if(min_duration != 0){
+                    //s.encode_hard_at_least_n(constraint, get<0>(k.second)* min_duration);
                     kmto_encode_atleastN(top_lit, clauses, constraint, get<0>(k.second)* min_duration);
                 }
             }
@@ -106,6 +113,7 @@ public:
 
 
         if(has_split_event_constraint) {
+            std::cout << min_duration << " " << max_duration << " " << min_amount << " " << max_amount << std::endl;
             if(has_preffered_time){
                 for(auto &time: preffered_time){
                     int index = time->getIndex();

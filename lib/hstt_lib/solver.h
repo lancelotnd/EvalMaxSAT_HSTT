@@ -1,5 +1,7 @@
 #include  "../../ipamir.h"
 #include "../pysat/clset.hh"
+#include "../pysat/cardenc/mto.hh"
+#pragma once
 class Solver {
 
 public: static inline int toplit{0};
@@ -21,12 +23,25 @@ public:   Solver(){
         }
         int result = ipamir_solve(solver);
         is_sat = result == 30;
-        std::cout << result << std::endl;
+        if(result == 30){
+            std::cout << "Cost " << ipamir_val_obj(solver) << std::endl;
+        } else {
+            std::cout <<"UNSAT"<< std::endl;
+        }
+
         return is_sat;
     }
 
     int get_val_lit(int lit){
         return ipamir_val_lit(solver, lit);
+    }
+
+    void encode_hard_at_least_n(std::vector<int> constraint, int n){
+        kmto_encode_atleastN(toplit, clauses, constraint, n);
+    }
+
+    void encode_hard_at_most_n(std::vector<int> constraint, int n){
+        kmto_encode_atmostN(toplit, clauses, constraint, n);
     }
 
 
