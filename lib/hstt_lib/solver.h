@@ -26,4 +26,9 @@ public:   Solver(){
 
     }
 
+
+    ClauseSet& getClauseSet(){
+    return clauses;
+}
+
 };
