@@ -40,7 +40,7 @@ public: EncoderV2(
     }
 
         void encode() {
-        ClauseSet clauses;
+        //ClauseSet clauses;
         std::map<std::string, int> starting_index_for_event;
         std::vector<int> allTimes;
         propagate_constraints();
@@ -54,6 +54,7 @@ public: EncoderV2(
                     void * solver = ipamir_init();
 
                     tmp->printResource();
+                    Solver s;
 
                     std::vector<Event*> associatedEvents = getEvents(tmp->getClashingEvents());
                     std::map<int, std::vector<int>> same_time;
@@ -68,23 +69,16 @@ public: EncoderV2(
                             Solver::toplit = i+1;
                         }
                         allTimes_for_resources.insert(allTimes_for_resources.end(), this_resource_times.begin(), this_resource_times.end());
-                        event->AssignTimes(t, this_resource_times, Solver::toplit, clauses);
+                        event->AssignTimes(t, this_resource_times, Solver::toplit, s.getClauseSet());
                     }
                     for(auto index: same_time){
-                        mto_encode_atmostN(Solver::toplit, clauses,index.second,1);
+                        mto_encode_atmostN(Solver::toplit, s.getClauseSet(),index.second,1);
                     }
-                    Solver s;
-                    s.solve(clauses);
-                    for(auto clau:clauses.get_clauses()){
-                        for(auto l: clau){
-                            ipamir_add_hard(solver,l);
-                        }
-                        ipamir_add_hard(solver,0);
-                    }
-                    clauses.clear();
-                    int ret_code = ipamir_solve(solver);
-                    assert(ret_code ==30);
-                    if(ret_code == 30){
+
+
+                    bool ret_code = s.solve();
+                    assert(ret_code);
+                    if(ret_code){
                         PrintSchedule printer(tmp->getId());
 
                         for(auto ev: associatedEvents){
@@ -93,8 +87,8 @@ public: EncoderV2(
                             std::vector<std::string> allocated_slots;
 
                             for( int i = index_offset; i< index_offset+100; i++) {
-                                if (ipamir_val_lit(solver, i) > 0) {
-                                    int slot = ipamir_val_lit(solver, i) - (index_offset - 1);
+                                if (s.get_val_lit(i) > 0) {
+                                    int slot = s.get_val_lit(i) - (index_offset - 1);
                                     allocated_slot_id.push_back(slot-1);
                                     allocated_slots.push_back(t[slot - 1].getId());
                                 }
