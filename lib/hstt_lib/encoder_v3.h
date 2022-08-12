@@ -137,6 +137,8 @@ public: EncoderV3(
                             e->addSpreadEventConstraint(spreadConstraint->getMinMaxTimes());
                         }
                     }
+                } else if(c[i]->getClassName() == "PreferResourcesConstraint"){
+                    std::cout << "We have a resource preference" << std::endl;
                 }
             }
         }
