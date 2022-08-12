@@ -79,7 +79,7 @@ public: EncoderV3(
                         PrintSchedule printer(tmp->getId());
 
                         for(auto ev: associatedEvents){
-                            int index_offset = ev->getIndexOffset();
+                           int index_offset = ev->getIndexOffset();
                             std::vector<int> allocated_slot_id;
                             std::vector<std::string> allocated_slots;
 

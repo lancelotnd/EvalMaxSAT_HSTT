@@ -89,18 +89,27 @@ public:
 
 
         if(has_spread_event_constraint){
+            ClauseSet c;
 
             for(auto k: spread_time) {
                 auto v = times.getIndexes_for_day(k.first);
                 std::vector<int> constraint = getTimesFromOffset(v);
                 if(max_duration!= 0){
-                    kmto_encode_atmostN(top_lit, clauses, constraint, get<1>(k.second)* max_duration);
+                    kmto_encode_atmostN(top_lit, c, constraint, get<1>(k.second)* max_duration);
+                    soften_clauses(c,top_lit,clauses);
+                    s.add_soft(-top_lit,1);
+                    c.clear();
+
+
                 } else {
                     std::cout << "Oups we didnt plan for that. " << std::endl;
                 }
                 if(min_duration != 0){
                     //s.encode_hard_at_least_n(constraint, get<0>(k.second)* min_duration);
                     kmto_encode_atleastN(top_lit, clauses, constraint, get<0>(k.second)* min_duration);
+                    soften_clauses(c,top_lit,clauses);
+                    s.add_soft(-top_lit,1);
+                    c.clear();
                 }
             }
         }
@@ -138,6 +147,17 @@ public:
             if(has_preffered_time){
             } else{
                 std::cout << id << " has NO SPLIT and NO PREFERRED CONSTRAINTS. WAT????" << std::endl;
+            }
+        }
+    }
+
+
+    void soften_clauses(ClauseSet &c, int & top_lit, ClauseSet & allClauses){
+        if(!c.get_clauses().empty()){
+            top_lit++;
+            for(auto clause : c.get_clauses()){
+                clause.push_back(-top_lit);
+                allClauses.add_clause(clause);
             }
         }
     }

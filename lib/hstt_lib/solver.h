@@ -44,9 +44,16 @@ public:   Solver(){
         kmto_encode_atmostN(toplit, clauses, constraint, n);
     }
 
+    void add_soft(int lit, int weight){
+        ipamir_add_soft_lit(solver,lit,weight);
+    }
+
 
     ClauseSet& getClauseSet(){
-    return clauses;
-}
+        return clauses;
+    }
+
+
+
 
 };
