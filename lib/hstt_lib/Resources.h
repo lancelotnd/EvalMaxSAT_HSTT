@@ -15,8 +15,6 @@
 #include "../../lib/pugixml-1.12/src/pugixml.hpp"
 #include <set>
 
-
-
 struct ResourceGroup {
     std::string id;
     std::string name;
@@ -29,6 +27,8 @@ class Resource {
     std::string ref_res_type;
     std::vector<std::string> ref_res_group;
     std::set<std::string> associated_events;
+    int total_scheduled_duration = 0;
+    std::vector<int> all_durations;
 
 
 
@@ -47,7 +47,7 @@ public: Resource(pugi::xml_node t){
     }
 
     Resource() {
-        //Default constructor required for maps.q
+        //Default constructor required for maps.
     }
 
     std::set<std::string> getClashingEvents(){
@@ -62,20 +62,29 @@ public: Resource(pugi::xml_node t){
         std::cout << std::endl;
     }
 
-    void associateEvent(std::string e) {
+    void associateEvent(std::string e, int duration) {
         associated_events.insert(e);
+        total_scheduled_duration += duration;
+        all_durations.push_back(duration);
     }
 
     std::string getId(){
         return id;
     }
 
+    int getTotalDuration(){
+        return total_scheduled_duration;
+    }
+
+    std::vector<int> getDurations(){
+        return all_durations;
+    }
+
     void printResource() {
-        std::cout << id << " : " << name << ", " << ref_res_type << std::endl;
+        std::cout << id << " : " << name << ", " << ref_res_type <<" Duration : " << total_scheduled_duration << " periods" << std::endl;
         for(auto e :ref_res_group) {
             std::cout << "> " << e << std::endl;
         }
-        std::cout << "-------------------------" << std::endl;
     }
 };
 
@@ -113,7 +122,9 @@ public: Resources(pugi::xml_node resources_node) {
     size_t resources_types_size(){
             return resourceTypes.size();
     }
-
+    std::map<std::string, std::string> get_resources_types(){
+        return resourceTypes;
+    }
 
     std::vector<std::set<std::string>> getAllClashingEvents(){
         std::vector<std::set<std::string>> toReturn;
@@ -137,6 +148,8 @@ public: Resources(pugi::xml_node resources_node) {
         }
 
     }
+
+
 
     Resource* getPrt(std::string res_ref) {
         return &resourceMap[res_ref];

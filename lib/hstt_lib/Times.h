@@ -12,6 +12,7 @@
 
 
 class Time {
+    int index;
     std::string name;
     std::string id;
     std::string ref_day;
@@ -19,7 +20,7 @@ class Time {
 
 
 
-public: Time(pugi::xml_node t){
+public: Time(pugi::xml_node t) {
         id = t.attribute("Id").as_string();
         name = t.child("Name").child_value();
         ref_day = t.child("Day").attribute("Reference").as_string();
@@ -29,8 +30,26 @@ public: Time(pugi::xml_node t){
         }
     }
 
-    std::string getId(){
+    Time(){}
+
+    std::vector<std::string> getGroups(){
+        return ref_timegroups;
+    }
+
+    std::string getDay(){
+        return ref_day;
+    }
+
+    int getIndex(){
+        return index;
+    }
+
+    std::string getId() {
         return id;
+    }
+
+    void setIndex(int i){
+        index = i;
     }
 
     void printTime() {
@@ -44,21 +63,37 @@ public: Time(pugi::xml_node t){
 
 
 class Times {
+    int index = 1;
     std::map<std::string,std::string> timegroups;
-    std::vector<Time> times;
+    std::vector<std::string> times;
+    std::map<std::string, Time> times_map;
+    std::map<std::string, std::vector<Time>> times_of_day;
+    std::map<std::string, std::vector<Time*>> time_of_group;
 
-public : Times(pugi::xml_node times_node){
 
-            for(pugi::xml_node t : times_node.child("Times").children()){
-                if((std::string)t.name() == "Time"){
-                    addTime(t);
-                } else if ( (std::string) t.name() == "TimeGroups") {
-                    for(pugi::xml_node tg : t.children()){
-                        addTimegroup(tg);
-                    }
-                }
+public : Times(pugi::xml_node times_node)
+{
+
+    for(pugi::xml_node t : times_node.child("Times").children()){
+        if((std::string)t.name() == "Time"){
+            addTime(t);
+        } else if ( (std::string) t.name() == "TimeGroups") {
+            for(pugi::xml_node tg : t.children()){
+                addTimegroup(tg);
+            }
         }
+    }
 }
+
+    std::vector<Time*> getTimesOfGroup(std::string g)
+    {
+        return time_of_group[g];
+    }
+
+    Time * getTime(std::string id)
+    {
+     return &times_map[id];
+    }
 
     size_t size()
     {
@@ -67,7 +102,14 @@ public : Times(pugi::xml_node times_node){
 
     void addTime(pugi::xml_node time_node){
         Time t = Time(time_node);
-        times.push_back(t);
+        t.setIndex(index);
+        index++;
+        times.push_back(t.getId());
+        times_map[t.getId()] = t;
+        times_of_day[t.getDay()].emplace_back(t);
+        for(auto g: t.getGroups()){
+            time_of_group[g].push_back(&times_map[t.getId()]);
+        }
     }
 
     void addTimegroup(pugi::xml_node tg){
@@ -76,6 +118,15 @@ public : Times(pugi::xml_node times_node){
         timegroups[id] = name;
     }
 
-    Time & operator [](int i) {return times[i];}
+    std::vector<int> getIndexes_for_day(std::string day){
+        std::vector<int> to_return;
+        auto t = times_of_day[day];
+        for(auto time: t){
+            to_return.emplace_back(time.getIndex());
+        }
+        return to_return;
+    }
+
+    Time & operator [](int i) {return times_map[times[i]];}
 
 };
