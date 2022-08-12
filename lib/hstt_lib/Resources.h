@@ -15,8 +15,6 @@
 #include "../../lib/pugixml-1.12/src/pugixml.hpp"
 #include <set>
 
-
-
 struct ResourceGroup {
     std::string id;
     std::string name;

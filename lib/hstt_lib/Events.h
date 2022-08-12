@@ -89,12 +89,6 @@ public:
 
 
         if(has_spread_event_constraint){
-            std::cout << name << " ";
-            for(auto & sp: spread_time){
-                 std::cout << " [" << sp.first << " : " << sp.second.first << " " << sp.second.second << " ]," ;
-            }
-            std::cout << std::endl;
-
 
             for(auto k: spread_time) {
                 auto v = times.getIndexes_for_day(k.first);
@@ -113,7 +107,6 @@ public:
 
 
         if(has_split_event_constraint) {
-            std::cout << min_duration << " " << max_duration << " " << min_amount << " " << max_amount << std::endl;
             if(has_preffered_time){
                 for(auto &time: preffered_time){
                     int index = time->getIndex();
