@@ -11,6 +11,7 @@
 #include "Resources.h"
 #include "../pysat/clset.hh"
 #include "../pysat/cardenc/mto.hh"
+#include "solver.h"
 #pragma once
 
 struct ResourceEvent {
@@ -34,6 +35,8 @@ class Event {
     std::vector<std::string> event_groups_ref;
     std::vector<ResourceEvent> resources;
     std::set<Time*> preffered_time;
+    std::map<std::string, std::pair<int ,int>> spread_time;
+
     std::vector<int> solution_time;
     int index_offset;
 
@@ -72,7 +75,7 @@ public:
 
     ~Event(){}
 
-    void AssignTimes(Times &times, std::vector<int> &assignment, int& top_lit, ClauseSet &clauses){
+    void AssignTimes(Times &times, std::vector<int> &assignment, int& top_lit, ClauseSet &clauses, Solver s) {
         index_offset = assignment[0];
         //First there shall be exactly *n* periods allocated where *n* is the total event duration.
         kmto_encode_equalsN(top_lit, clauses, assignment, duration);
@@ -82,9 +85,37 @@ public:
 
         bool has_split_event_constraint = !((min_duration == 0) && (max_duration == 0) && (min_amount == 0) && (max_amount == 0));
         bool has_preffered_time = !preffered_time.empty();
+        bool has_spread_event_constraint = !spread_time.empty();
 
 
-        if(has_split_event_constraint){
+        if(has_spread_event_constraint){
+            ClauseSet c;
+
+            for(auto k: spread_time) {
+                auto v = times.getIndexes_for_day(k.first);
+                std::vector<int> constraint = getTimesFromOffset(v);
+                if(max_duration!= 0){
+                    kmto_encode_atmostN(top_lit, c, constraint, get<1>(k.second)* max_duration);
+                    soften_clauses(c,top_lit,clauses);
+                    s.add_soft(-top_lit,1);
+                    c.clear();
+
+
+                } else {
+                    std::cout << "Oups we didnt plan for that. " << std::endl;
+                }
+                if(min_duration != 0){
+                    //s.encode_hard_at_least_n(constraint, get<0>(k.second)* min_duration);
+                    kmto_encode_atleastN(top_lit, clauses, constraint, get<0>(k.second)* min_duration);
+                    soften_clauses(c,top_lit,clauses);
+                    s.add_soft(-top_lit,1);
+                    c.clear();
+                }
+            }
+        }
+
+
+        if(has_split_event_constraint) {
             if(has_preffered_time){
                 for(auto &time: preffered_time){
                     int index = time->getIndex();
@@ -121,6 +152,17 @@ public:
     }
 
 
+    void soften_clauses(ClauseSet &c, int & top_lit, ClauseSet & allClauses){
+        if(!c.get_clauses().empty()){
+            top_lit++;
+            for(auto clause : c.get_clauses()){
+                clause.push_back(-top_lit);
+                allClauses.add_clause(clause);
+            }
+        }
+    }
+
+
 
 
     std::string getId() const {
@@ -143,8 +185,21 @@ public:
         max_amount   = xa;
     }
 
+    void addSpreadEventConstraint(std::map<std::string, std::pair<int ,int>> timegroups){
+        spread_time = timegroups;
+    }
+
     void addTimePreference(std::set<Time*> _) {
         preffered_time = _;
+    }
+
+    std::vector<int> getTimesFromOffset(std::vector<int> pure_time){
+        std::vector<int> to_return;
+        int offset = index_offset-1;
+        for(auto time :pure_time) {
+           to_return.push_back(time+offset);
+       }
+        return to_return;
     }
 
 
@@ -191,7 +246,7 @@ private:
         }
         if(after_padding-offset <= t.size()){
             if(t[after_padding-offset-1].getDay() ==
-            t[end-offset-1].getDay()){
+            t[end-offset-1].getDay()) {
                 times.push_back(-after_padding);
             }
         }

@@ -23,7 +23,7 @@
 #include "print_schedule.h"
 #include "solver.h"
 
-class EncoderV2 {
+class EncoderV3 {
     Times& t;
     Resources& r;
     Events& e;
@@ -31,16 +31,15 @@ class EncoderV2 {
     int nb_clauses = 0;
 
 
-public: EncoderV2(
+public: EncoderV3(
         Times &t,
         Resources &r,
         Events &e,
         Constraints &c) : c(c), r(r), e(e), t(t){
-        std::cout << "c Constructed Encoder V2" << std::endl;
+        std::cout << "c Constructed Encoder V3" << std::endl;
     }
 
         void encode() {
-        ClauseSet clauses;
         std::map<std::string, int> starting_index_for_event;
         std::vector<int> allTimes;
         propagate_constraints();
@@ -51,9 +50,8 @@ public: EncoderV2(
                 Resource * tmp = r.getPrt(res);
 
                 if(!tmp->getClashingEvents().empty()){
-                    void * solver = ipamir_init();
-
                     tmp->printResource();
+                    Solver s;
 
                     std::vector<Event*> associatedEvents = getEvents(tmp->getClashingEvents());
                     std::map<int, std::vector<int>> same_time;
@@ -68,33 +66,26 @@ public: EncoderV2(
                             Solver::toplit = i+1;
                         }
                         allTimes_for_resources.insert(allTimes_for_resources.end(), this_resource_times.begin(), this_resource_times.end());
-                        event->AssignTimes(t, this_resource_times, Solver::toplit, clauses);
+                        event->AssignTimes(t, this_resource_times, Solver::toplit, s.getClauseSet(), s);
                     }
                     for(auto index: same_time){
-                        mto_encode_atmostN(Solver::toplit, clauses,index.second,1);
+                        mto_encode_atmostN(Solver::toplit, s.getClauseSet(),index.second,1);
                     }
-                    Solver s;
-                    s.solve(clauses);
-                    for(auto clau:clauses.get_clauses()){
-                        for(auto l: clau){
-                            ipamir_add_hard(solver,l);
-                        }
-                        ipamir_add_hard(solver,0);
-                    }
-                    clauses.clear();
-                    int ret_code = ipamir_solve(solver);
-                    assert(ret_code ==30);
-                    if(ret_code == 30){
+
+
+                    bool ret_code = s.solve();
+                    assert(ret_code);
+                    if(ret_code){
                         PrintSchedule printer(tmp->getId());
 
                         for(auto ev: associatedEvents){
-                            int index_offset = ev->getIndexOffset();
+                           int index_offset = ev->getIndexOffset();
                             std::vector<int> allocated_slot_id;
                             std::vector<std::string> allocated_slots;
 
                             for( int i = index_offset; i< index_offset+100; i++) {
-                                if (ipamir_val_lit(solver, i) > 0) {
-                                    int slot = ipamir_val_lit(solver, i) - (index_offset - 1);
+                                if (s.get_val_lit(i) > 0) {
+                                    int slot = s.get_val_lit(i) - (index_offset - 1);
                                     allocated_slot_id.push_back(slot-1);
                                     allocated_slots.push_back(t[slot - 1].getId());
                                 }
@@ -125,19 +116,29 @@ public: EncoderV2(
                 if(c[i]->getClassName() == "SplitEventConstraint") {
                     std::set<Event*> se = c[i]->getApplied(e);
                     for(auto e:se){
-                        SplitEventsConstraint *s = static_cast<SplitEventsConstraint*>(constraint);
+                        SplitEventsConstraint *s = dynamic_cast<SplitEventsConstraint*>(constraint);
                         auto v = s->getMinMax();
                         e->addSplitConstraint(v[0], v[1], v[2], v[3]);
                     }
                 } else if(c[i]->getClassName() == "PreferTimesConstraint") {
-                    PreferTimesConstraint * pref_constraint = static_cast<PreferTimesConstraint*>(constraint);
+                    PreferTimesConstraint * pref_constraint = dynamic_cast<PreferTimesConstraint*>(constraint);
                     std::set<Event*> se = pref_constraint->getApplied(e);
                     for(auto e:se) {
                         e->addTimePreference(pref_constraint->getTimes(t));
                     }
-                } else if("SpreadEventConstraint"){
-                    SpreadEventsConstraint * spreadConstraint = static_cast<SpreadEventsConstraint*>(constraint);
-
+                } else if(c[i]->getClassName() =="SpreadEventsConstraint"){
+                    SpreadEventsConstraint * spreadConstraint = dynamic_cast<SpreadEventsConstraint*>(constraint);
+                    std::set<Event*> spread = spreadConstraint->getApplied(e);
+                    if(spread.size() != 1){
+                        std::cout<< "Looks like we have multiple events with spread event constraint" << std::endl;
+                        exit(0);
+                    } else {
+                        for(auto e:spread) {
+                            e->addSpreadEventConstraint(spreadConstraint->getMinMaxTimes());
+                        }
+                    }
+                } else if(c[i]->getClassName() == "PreferResourcesConstraint"){
+                    std::cout << "We have a resource preference" << std::endl;
                 }
             }
         }

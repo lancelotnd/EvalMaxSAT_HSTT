@@ -30,7 +30,8 @@ public: Constraint(pugi::xml_node node){
         return "Base Constraint class";
     }
     virtual std::set<Event*> getApplied(Events &events){
-
+        std::set<Event*> to_return;
+        return to_return;
     }
 
     virtual ~Constraint() = default;
@@ -146,16 +147,38 @@ public: explicit DistributeSplitEventsConstraint(pugi::xml_node node) : Constrai
  */
 
 class PreferResourcesConstraint : public Constraint {
+    std::vector<std::string> applies_to_events;
+    std::vector<std::string> applies_to_groups;
 
 public: explicit PreferResourcesConstraint(pugi::xml_node node) : Constraint(node) {
 
+        for(pugi::xml_node event : node.child("AppliesTo").child("Events").children()){
+            applies_to_events.push_back(event.attribute("Reference").as_string());
+        }
 
+        for(pugi::xml_node event_group : node.child("AppliesTo").child("EventGroups").children()){
+            applies_to_groups.push_back(event_group.attribute("Reference").as_string());
+        }
 
+    }
+
+    std::set<Event*> getApplied(Events &events) override {
+        std::set<Event*> to_return;
+        for(auto e : applies_to_events){
+            to_return.insert(&events.getEvent(e));
+        }
+        for(auto e : applies_to_groups){
+            std::vector<Event*> a = events.getEventGroups(e);
+            to_return.insert(a.begin(), a.end());
+        }
+        return to_return;
     }
 
     std::string getClassName() override {
         return "PreferResourcesConstraint";
     }
+
+
 };
 
 /**
@@ -247,6 +270,7 @@ class SpreadEventsConstraint : public Constraint {
 
     std::vector<std::string> applies_to_events;
     std::vector<std::string> applies_to_groups;
+    std::map<std::string, std::pair<int ,int>> timegroups;
 
 public: explicit SpreadEventsConstraint(pugi::xml_node node) : Constraint(node) {
 
@@ -258,6 +282,13 @@ public: explicit SpreadEventsConstraint(pugi::xml_node node) : Constraint(node) 
             applies_to_groups.push_back(event_group.attribute("Reference").as_string());
         }
 
+        for(pugi::xml_node timegroup : node.child("TimeGroups").children()){
+            timegroups[timegroup.attribute("Reference").as_string()] =
+                    {atoi(timegroup.child("Minimum").child_value()),
+                     atoi(timegroup.child("Maximum").child_value())
+                     };
+        }
+
 
     }
 
@@ -267,8 +298,10 @@ public: explicit SpreadEventsConstraint(pugi::xml_node node) : Constraint(node) 
 
     std::set<Event*> getApplied(Events &events) override {
         std::set<Event*> to_return;
-        for(auto e : applies_to_events){
-            to_return.insert(&events.getEvent(e));
+        if(applies_to_events.size() != 0) {
+            for(auto e : applies_to_events){
+                to_return.insert(&events.getEvent(e));
+            }
         }
         for(auto e : applies_to_groups){
             std::vector<Event*> a = events.getEventGroups(e);
@@ -277,8 +310,8 @@ public: explicit SpreadEventsConstraint(pugi::xml_node node) : Constraint(node) 
         return to_return;
     }
 
-    void getMinMaxTimes() {
-
+    std::map<std::string, std::pair<int ,int>> getMinMaxTimes() {
+        return timegroups;
     }
 };
 
