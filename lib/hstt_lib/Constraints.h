@@ -149,6 +149,7 @@ public: explicit DistributeSplitEventsConstraint(pugi::xml_node node) : Constrai
 class PreferResourcesConstraint : public Constraint {
     std::vector<std::string> applies_to_events;
     std::vector<std::string> applies_to_groups;
+    std::vector<std::string> resource_groups;
 
 public: explicit PreferResourcesConstraint(pugi::xml_node node) : Constraint(node) {
 
@@ -158,6 +159,10 @@ public: explicit PreferResourcesConstraint(pugi::xml_node node) : Constraint(nod
 
         for(pugi::xml_node event_group : node.child("AppliesTo").child("EventGroups").children()){
             applies_to_groups.push_back(event_group.attribute("Reference").as_string());
+        }
+
+        for(pugi::xml_node resource_group : node.child("ResourceGroups").children()){
+            resource_groups.emplace_back(resource_group.attribute("Reference").as_string());
         }
 
     }
@@ -173,6 +178,9 @@ public: explicit PreferResourcesConstraint(pugi::xml_node node) : Constraint(nod
         }
         return to_return;
     }
+
+
+
 
     std::string getClassName() override {
         return "PreferResourcesConstraint";
