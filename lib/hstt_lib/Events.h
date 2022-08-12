@@ -87,7 +87,6 @@ public:
         bool has_preffered_time = !preffered_time.empty();
         bool has_spread_event_constraint = !spread_time.empty();
 
-
         if(has_spread_event_constraint){
             ClauseSet c;
 
@@ -102,7 +101,7 @@ public:
 
 
                 } else {
-                    std::cout << "Oups we didnt plan for that. " << std::endl;
+                    assert(!"This should not happen");
                 }
                 if(min_duration != 0){
                     //s.encode_hard_at_least_n(constraint, get<0>(k.second)* min_duration);
@@ -141,16 +140,15 @@ public:
                 }
 
             } else{
-                std::cout << id << " has split BUT NO PREFERRED TIME. ffs" << std::endl;
+                assert(!"TODO: implement when events are split but have no prefferred times.");
             }
         } else {
             if(has_preffered_time){
             } else{
-                std::cout << id << " has NO SPLIT and NO PREFERRED CONSTRAINTS. WAT????" << std::endl;
+                assert(!"TODO: implement when events have no split and no prefferred time.");
             }
         }
     }
-
 
     void soften_clauses(ClauseSet &c, int & top_lit, ClauseSet & allClauses){
         if(!c.get_clauses().empty()){
@@ -161,9 +159,6 @@ public:
             }
         }
     }
-
-
-
 
     std::string getId() const {
         return id;
