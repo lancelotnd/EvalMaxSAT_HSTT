@@ -28,6 +28,7 @@ class Event {
     int min_amount = 0;
     int max_amount = 0;
     int duration;
+    std::string pref_resource_group;
 
     std::string name;
     std::string id;
@@ -130,7 +131,6 @@ public:
                     for(auto cl : c.get_clauses()) {
                         cl.push_back(top_lit);
                         clauses.add_clause(cl);
-
                     }
                     c.clear();
                 }
@@ -164,12 +164,21 @@ public:
         return id;
     }
 
+    std::string getPrefferedRes() const {
+        return pref_resource_group;
+    }
+
     int getIndexOffset()  {
         return index_offset;
     }
 
     std::vector<std::string> getEventGroups() {
         return event_groups_ref;
+    }
+
+    void addPreferResourceConstraint(std::string res_group){
+        std::cout << name <<  " has preference resource for " << res_group << std::endl;
+        pref_resource_group = res_group;
     }
 
     void addSplitConstraint(int md, int xd, int ma, int xa)

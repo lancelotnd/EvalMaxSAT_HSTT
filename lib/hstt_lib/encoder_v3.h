@@ -29,6 +29,8 @@ class EncoderV3 {
     Events& e;
     Constraints& c;
     int nb_clauses = 0;
+    std::map<std::string, std::map<int, std::set<std::string>>> SameTimeSameDeptRes;
+
 
 
 public: EncoderV3(
@@ -40,6 +42,7 @@ public: EncoderV3(
     }
 
         void encode() {
+
         std::map<std::string, int> starting_index_for_event;
         std::vector<int> allTimes;
         propagate_constraints();
@@ -79,6 +82,7 @@ public: EncoderV3(
                         PrintSchedule printer(tmp->getId());
 
                         for(auto ev: associatedEvents){
+
                            int index_offset = ev->getIndexOffset();
                             std::vector<int> allocated_slot_id;
                             std::vector<std::string> allocated_slots;
@@ -86,6 +90,9 @@ public: EncoderV3(
                             for( int i = index_offset; i< index_offset+100; i++) {
                                 if (s.get_val_lit(i) > 0) {
                                     int slot = s.get_val_lit(i) - (index_offset - 1);
+                                    if(ev->getPrefferedRes() != ""){
+                                        SameTimeSameDeptRes[ev->getPrefferedRes()][slot-1].insert(ev->getId());
+                                    }
                                     allocated_slot_id.push_back(slot-1);
                                     allocated_slots.push_back(t[slot - 1].getId());
                                 }
@@ -95,6 +102,22 @@ public: EncoderV3(
                         }
                         printer.print();
                     }
+                }
+            }
+        }
+        printSameTimeRes();
+    }
+
+
+    void printSameTimeRes(){
+        for(auto z:SameTimeSameDeptRes){
+            std::cout << ">>>>> " <<  z.first << " <<<<<" << std::endl;
+            for(auto y: z.second){
+                if(!y.second.empty()){
+                    for(auto x : y.second){
+                        std::cout << x << " ";
+                    }
+                    std::cout << std::endl;
                 }
             }
         }
@@ -130,15 +153,28 @@ public: EncoderV3(
                     SpreadEventsConstraint * spreadConstraint = dynamic_cast<SpreadEventsConstraint*>(constraint);
                     std::set<Event*> spread = spreadConstraint->getApplied(e);
                     if(spread.size() != 1){
-                        std::cout<< "Looks like we have multiple events with spread event constraint" << std::endl;
-                        exit(0);
+                        assert(!"TODO : Implement case where the spread is across multiple events.");
                     } else {
                         for(auto e:spread) {
                             e->addSpreadEventConstraint(spreadConstraint->getMinMaxTimes());
                         }
                     }
                 } else if(c[i]->getClassName() == "PreferResourcesConstraint"){
-                    std::cout << "We have a resource preference" << std::endl;
+                    PreferResourcesConstraint * prefResource = dynamic_cast<PreferResourcesConstraint*>(constraint);
+                    std::set<Event*> applied_events = prefResource->getApplied(e);
+                    std::vector<std::string> resource_groups = prefResource->getResourceGroups();
+                    if(resource_groups.empty()){
+                        std::cout << "TODO" << std::endl;
+                        //assert(!"TODO: Implement preference for a single resource instead of a group");
+                    }
+                    else if(resource_groups.size() > 1){
+                        assert(!"TODO: Implement preferences for multiple resource groups.");
+                    }else {
+                        for(auto ev: applied_events){
+                            ev->addPreferResourceConstraint(resource_groups[0]);
+                        }
+                    }
+
                 }
             }
         }

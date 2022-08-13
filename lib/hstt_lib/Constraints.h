@@ -179,6 +179,10 @@ public: explicit PreferResourcesConstraint(pugi::xml_node node) : Constraint(nod
         return to_return;
     }
 
+    std::vector<std::string> getResourceGroups(){
+        return resource_groups;
+    }
+
 
 
 

@@ -32,13 +32,13 @@ class Resource {
 
 
 
-public: Resource(pugi::xml_node t){
+public: explicit Resource(pugi::xml_node t){
         id = t.attribute("Id").as_string();
         name = t.child("Name").child_value();
         ref_res_type = t.child("ResourceType").attribute("Reference").as_string();
 
         for(pugi::xml_node rg : t.child("ResourceGroups").children()){
-            ref_res_group.push_back(rg.attribute("Reference").as_string());
+            ref_res_group.emplace_back(rg.attribute("Reference").as_string());
         }
     }
 
@@ -46,9 +46,8 @@ public: Resource(pugi::xml_node t){
         return ref_res_type;
     }
 
-    Resource() {
-        //Default constructor required for maps.
-    }
+    Resource() = default;
+
 
     std::set<std::string> getClashingEvents(){
         return  associated_events;
@@ -56,13 +55,13 @@ public: Resource(pugi::xml_node t){
 
     void printAssociatedEvents(){
         std::cout << name << " " << ref_res_type << " : ";
-        for (auto e: associated_events) {
+        for (auto const  &e: associated_events) {
             std::cout << e << ", ";
         }
         std::cout << std::endl;
     }
 
-    void associateEvent(std::string e, int duration) {
+    void associateEvent(std::string const &e, int duration) {
         associated_events.insert(e);
         total_scheduled_duration += duration;
         all_durations.push_back(duration);
@@ -72,7 +71,7 @@ public: Resource(pugi::xml_node t){
         return id;
     }
 
-    int getTotalDuration(){
+    int getTotalDuration() const {
         return total_scheduled_duration;
     }
 
@@ -82,7 +81,7 @@ public: Resource(pugi::xml_node t){
 
     void printResource() {
         std::cout << id << " : " << name << ", " << ref_res_type <<" Duration : " << total_scheduled_duration << " periods" << std::endl;
-        for(auto e :ref_res_group) {
+        for(auto const &e :ref_res_group) {
             std::cout << "> " << e << std::endl;
         }
     }
@@ -91,12 +90,13 @@ public: Resource(pugi::xml_node t){
 class Resources {
     std::map<std::string, std::string> resourceTypes;
     std::map<std::string, ResourceGroup> resourceGroups;
+    std::map<std::string, std::vector<std::string>> resources_of_groups;
     std::map<std::string, Resource> resourceMap;
     std::map<std::string, std::vector<std::string>> resources_of_types;
 
 
 
-public: Resources(pugi::xml_node resources_node) {
+public: explicit Resources(pugi::xml_node resources_node) {
         for(pugi::xml_node r : resources_node.child("Resources").children()){
             if ((std::string) r.name() == "ResourceTypes"){
                 addResourceTypes(r);
@@ -134,7 +134,7 @@ public: Resources(pugi::xml_node resources_node) {
         return toReturn;
     }
 
-    std::vector<std::string> getResourcesOfType(std::string type) {
+    std::vector<std::string> getResourcesOfType(const std::string &type) {
         return resources_of_types[type];
     }
 
@@ -151,7 +151,7 @@ public: Resources(pugi::xml_node resources_node) {
 
 
 
-    Resource* getPrt(std::string res_ref) {
+    Resource* getPrt(const std::string &res_ref) {
         return &resourceMap[res_ref];
     }
 };
