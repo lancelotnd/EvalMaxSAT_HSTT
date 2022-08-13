@@ -110,15 +110,34 @@ public: EncoderV3(
 
 
     void printSameTimeRes(){
+        std::vector<std::string> color_code = {"\033[1;41m", "\033[1;42m", "\033[1;43m", "\033[1;44m", "\033[1;45m", "\033[1;46m", "\033[1;47m"};
         for(auto z:SameTimeSameDeptRes){
-            std::cout << ">>>>> " <<  z.first << " <<<<<" << std::endl;
+            bool over_booked = false;
+            std::string to_print = "";
+            int nb_periods = 0;
             for(auto y: z.second){
                 if(!y.second.empty()){
-                    for(auto x : y.second){
-                        std::cout << x << " ";
+                    if((int) r.getSizeOfGroup(z.first) >= (int) y.second.size()){
+                    } else {
+                        nb_periods++;
+                        over_booked = true;
+                        to_print += color_code[0] + "Period " + std::to_string(y.first)
+                                + "\033[0m is overbooked. NB EVENTS = "
+                                + std::to_string(y.second.size()) + " CAPACITY : "
+                                + std::to_string((int) r.getSizeOfGroup(z.first))
+                                + "\nWe need to reschedule "
+                                + std::to_string((int) y.second.size() -
+                                                                               (int) r.getSizeOfGroup(z.first))
+                                +" events\n";
                     }
-                    std::cout << std::endl;
                 }
+            }
+            if(over_booked) {
+                std::cout << color_code[0] << z.first << " are overbooked " << nb_periods << "% of the time" << std::endl;
+                std::cout << to_print;
+            } else {
+                std::cout << color_code[1] << z.first << " can accomodate the current schedule without conflicts\033[0m"
+                << std::endl << std::endl;
             }
         }
     }

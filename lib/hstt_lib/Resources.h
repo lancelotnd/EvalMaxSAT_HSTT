@@ -53,6 +53,10 @@ public: explicit Resource(pugi::xml_node t){
         return  associated_events;
     }
 
+    std::vector<std::string> getGroups() const{
+        return ref_res_group;
+    }
+
     void printAssociatedEvents(){
         std::cout << name << " " << ref_res_type << " : ";
         for (auto const  &e: associated_events) {
@@ -106,6 +110,9 @@ public: explicit Resources(pugi::xml_node resources_node) {
             }
             else if ((std::string) r.name() == "Resource"){
                 Resource res = Resource(r);
+                for(auto const &g :res.getGroups()){
+                    resources_of_groups[g].emplace_back(res.getId());
+                }
                 resourceMap[res.getId()] = res;
                 resources_of_types[res.getResType()].push_back(res.getId());
             }
@@ -118,6 +125,9 @@ public: explicit Resources(pugi::xml_node resources_node) {
         }
     }
 
+    size_t getSizeOfGroup(std::string group){
+        return resources_of_groups[group].size();
+    }
 
     size_t resources_types_size(){
             return resourceTypes.size();
@@ -148,8 +158,6 @@ public: explicit Resources(pugi::xml_node resources_node) {
         }
 
     }
-
-
 
     Resource* getPrt(const std::string &res_ref) {
         return &resourceMap[res_ref];
