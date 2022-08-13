@@ -73,7 +73,7 @@ public: EncoderV3(
                             Solver::toplit = i+1;
                         }
                         allTimes_for_resources.insert(allTimes_for_resources.end(), this_resource_times.begin(), this_resource_times.end());
-                        event->AssignTimes(t, this_resource_times, Solver::toplit, s->getClauseSet(), s);
+                        event->AssignTimes(t, this_resource_times, Solver::toplit, s->getClauseSet(), s, all_solvers.size()-1);
                     }
                     for(auto index: same_time){
                         mto_encode_atmostN(Solver::toplit, s->getClauseSet(),index.second,1);
@@ -94,7 +94,7 @@ public: EncoderV3(
                             for( int i = index_offset; i< index_offset+100; i++) {
                                 if (s->get_val_lit(i) > 0) {
                                     int slot = s->get_val_lit(i) - (index_offset - 1);
-                                    if(ev->getPrefferedRes() != ""){
+                                    if(ev->getPrefferedRes() != "") {
                                         SameTimeSameDeptRes[ev->getPrefferedRes()][slot-1].insert(ev->getId());
                                     }
                                     allocated_slot_id.push_back(slot-1);
@@ -102,6 +102,12 @@ public: EncoderV3(
                                 }
                             }
                             printer.add_course(ev->getId(), allocated_slot_id);
+                            std::cout << "{\"" << ev->getId() << "\": [";
+                            for(auto a: allocated_slot_id){
+                                std::cout << a << ", ";
+                            }
+
+                            std::cout<< "]}," << std::endl;
                             assert(allocated_slots.size() == ev->getDuration());
                         }
                         printer.print();
@@ -145,6 +151,10 @@ public: EncoderV3(
                 << std::endl << std::endl;
             }
         }
+    }
+
+    void resolveOverBooking(){
+
     }
 
 

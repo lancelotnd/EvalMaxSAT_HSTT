@@ -30,6 +30,8 @@ class Event {
     int max_amount = 0;
     int duration;
     std::string pref_resource_group;
+    int solver_index;
+    std::string main_resource;
 
     std::string name;
     std::string id;
@@ -57,6 +59,7 @@ public:
             ResourceEvent res;
             res.res_ref = r.attribute("Reference").as_string();
             if (res.res_ref != "") {
+                main_resource = res.res_ref;
                 res.is_wild_card = false;
                 res.res_ptr = all_resources.getPrt(res.res_ref);
                 res.res_ptr->associateEvent(id, duration);
@@ -77,7 +80,7 @@ public:
 
     ~Event(){}
 
-    void AssignTimes(Times &times, std::vector<int> &assignment, int& top_lit, ClauseSet &clauses, std::shared_ptr<Solver> s) {
+    void AssignTimes(Times &times, std::vector<int> &assignment, int& top_lit, ClauseSet &clauses, std::shared_ptr<Solver> s, int solver_index) {
         index_offset = assignment[0];
         //First there shall be exactly *n* periods allocated where *n* is the total event duration.
         kmto_encode_equalsN(top_lit, clauses, assignment, duration);

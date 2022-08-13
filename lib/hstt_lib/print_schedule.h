@@ -37,6 +37,7 @@ public:   explicit PrintSchedule(std::string teacher_name) {
             bool isOpen = false;
             int previous = -1;
             for(auto l : k.second){
+
                 if(previous < l-1 || l%20 ==0){
                     output[l] = padText(color, k.first);
                 } else {

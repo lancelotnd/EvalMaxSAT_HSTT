@@ -183,14 +183,9 @@ public: explicit PreferResourcesConstraint(pugi::xml_node node) : Constraint(nod
         return resource_groups;
     }
 
-
-
-
     std::string getClassName() override {
         return "PreferResourcesConstraint";
     }
-
-
 };
 
 /**
