@@ -15,7 +15,7 @@ public:   Solver(){
 
 
     bool solve(){
-        for (auto cl : clauses.get_clauses()){
+        for (const auto& cl : clauses.get_clauses()){
             for (auto l :cl){
                 ipamir_add_hard(solver, l);
             }
@@ -32,7 +32,7 @@ public:   Solver(){
         return is_sat;
     }
 
-    int get_val_lit(int lit){
+    [[nodiscard]] int get_val_lit(int lit) const {
         return ipamir_val_lit(solver, lit);
     }
 

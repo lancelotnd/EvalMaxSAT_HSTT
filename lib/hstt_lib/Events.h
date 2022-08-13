@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <map>
+#include <memory>
 #include "../../lib/pugixml-1.12/src/pugixml.hpp"
 #include "Resources.h"
 #include "../pysat/clset.hh"
@@ -76,7 +77,7 @@ public:
 
     ~Event(){}
 
-    void AssignTimes(Times &times, std::vector<int> &assignment, int& top_lit, ClauseSet &clauses, Solver s) {
+    void AssignTimes(Times &times, std::vector<int> &assignment, int& top_lit, ClauseSet &clauses, std::shared_ptr<Solver> s) {
         index_offset = assignment[0];
         //First there shall be exactly *n* periods allocated where *n* is the total event duration.
         kmto_encode_equalsN(top_lit, clauses, assignment, duration);
@@ -97,7 +98,7 @@ public:
                 if(max_duration!= 0){
                     kmto_encode_atmostN(top_lit, c, constraint, get<1>(k.second)* max_duration);
                     soften_clauses(c,top_lit,clauses);
-                    s.add_soft(-top_lit,1);
+                    s->add_soft(-top_lit,1);
                     c.clear();
 
 
@@ -108,7 +109,7 @@ public:
                     //s.encode_hard_at_least_n(constraint, get<0>(k.second)* min_duration);
                     kmto_encode_atleastN(top_lit, clauses, constraint, get<0>(k.second)* min_duration);
                     soften_clauses(c,top_lit,clauses);
-                    s.add_soft(-top_lit,1);
+                    s->add_soft(-top_lit,1);
                     c.clear();
                 }
             }

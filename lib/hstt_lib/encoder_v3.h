@@ -22,6 +22,7 @@
 #include "../../ipamir.h"
 #include "print_schedule.h"
 #include "solver.h"
+#include <memory>
 
 class EncoderV3 {
     Times& t;
@@ -30,6 +31,7 @@ class EncoderV3 {
     Constraints& c;
     int nb_clauses = 0;
     std::map<std::string, std::map<int, std::set<std::string>>> SameTimeSameDeptRes;
+    std::vector<std::shared_ptr<Solver>> all_solvers;
 
 
 
@@ -54,8 +56,10 @@ public: EncoderV3(
 
                 if(!tmp->getClashingEvents().empty()){
                     tmp->printResource();
-                    Solver s;
 
+
+                    all_solvers.push_back(std::make_shared<Solver>());
+                    std::shared_ptr<Solver> s = all_solvers[all_solvers.size()-1];
                     std::vector<Event*> associatedEvents = getEvents(tmp->getClashingEvents());
                     std::map<int, std::vector<int>> same_time;
                     for (auto & event: associatedEvents){
@@ -69,14 +73,14 @@ public: EncoderV3(
                             Solver::toplit = i+1;
                         }
                         allTimes_for_resources.insert(allTimes_for_resources.end(), this_resource_times.begin(), this_resource_times.end());
-                        event->AssignTimes(t, this_resource_times, Solver::toplit, s.getClauseSet(), s);
+                        event->AssignTimes(t, this_resource_times, Solver::toplit, s->getClauseSet(), s);
                     }
                     for(auto index: same_time){
-                        mto_encode_atmostN(Solver::toplit, s.getClauseSet(),index.second,1);
+                        mto_encode_atmostN(Solver::toplit, s->getClauseSet(),index.second,1);
                     }
 
 
-                    bool ret_code = s.solve();
+                    bool ret_code = s->solve();
                     assert(ret_code);
                     if(ret_code){
                         PrintSchedule printer(tmp->getId());
@@ -88,8 +92,8 @@ public: EncoderV3(
                             std::vector<std::string> allocated_slots;
 
                             for( int i = index_offset; i< index_offset+100; i++) {
-                                if (s.get_val_lit(i) > 0) {
-                                    int slot = s.get_val_lit(i) - (index_offset - 1);
+                                if (s->get_val_lit(i) > 0) {
+                                    int slot = s->get_val_lit(i) - (index_offset - 1);
                                     if(ev->getPrefferedRes() != ""){
                                         SameTimeSameDeptRes[ev->getPrefferedRes()][slot-1].insert(ev->getId());
                                     }
@@ -102,6 +106,7 @@ public: EncoderV3(
                         }
                         printer.print();
                     }
+                    all_solvers.emplace_back(s);
                 }
             }
         }
