@@ -48,6 +48,10 @@ public:   Solver(){
         ipamir_add_soft_lit(solver,lit,weight);
     }
 
+    void assume(int lit){
+        ipamir_assume(solver,lit);
+}
+
 
     ClauseSet& getClauseSet(){
         return clauses;

@@ -126,7 +126,7 @@ public: EncoderV3(
             bool over_booked = false;
             std::string to_print = "";
             int nb_periods = 0;
-            for(auto y: z.second){
+            for(auto &y: z.second){
                 if(!y.second.empty()){
                     if((int) r.getSizeOfGroup(z.first) >= (int) y.second.size()){
                     } else {
@@ -140,6 +140,9 @@ public: EncoderV3(
                                 + std::to_string((int) y.second.size() -
                                                                                (int) r.getSizeOfGroup(z.first))
                                 +" events\n";
+                        std::cout << to_print;
+                        resolveOverBooking(*next(y.second.begin(),0),y.first);
+
                     }
                 }
             }
@@ -153,8 +156,60 @@ public: EncoderV3(
         }
     }
 
-    void resolveOverBooking(){
+    /**
+     * Here we try to eliminate the overbooking in a given departement by taking out an event at that
+     * particular slot time. For that we first need to gather the resource (teacher) and remove all
+     * assignments of schedule made to correctly update the SameTimeSameDept map. Then we solve again,
+     * with an assume false for the period in the schedule subject to overcrowding.
+     *
+     * @param event
+     */
 
+    void resolveOverBooking(std::string event, int period_to_unschedule){
+        Event & event2 = e.getEvent(event);
+        std::string res = event2.getResourceId();
+        int solver_index = event2.getSolverIndex();
+        Resource * resource  = r.getPrt(res);
+        std::shared_ptr<Solver> s = all_solvers[solver_index];
+        std::vector<Event*> associatedEvents = getEvents(resource->getClashingEvents());
+
+        for(auto &_ :associatedEvents){
+            if(_->getPrefferedRes()!= ""){
+                auto pref = _->getPrefferedRes();
+                int offset_index = _->getIndexOffset();
+                auto assigned_slots = getAssignedPeriods(offset_index, s);
+                for(auto &l : assigned_slots){
+                    SameTimeSameDeptRes[pref][l].erase(_->getId());
+                }
+            }
+        }
+        int block = event2.getIndexOffset()+ period_to_unschedule;
+        s->assume(-block);
+        s->solve();
+        for(auto &re: associatedEvents){
+            int offset_index = re->getIndexOffset();
+            std::string pref = re->getPrefferedRes();
+
+            auto assigned_slots = getAssignedPeriods(offset_index, s);
+            for(auto &l : assigned_slots){
+                SameTimeSameDeptRes[pref][l].insert(re->getId());
+            }
+        }
+        printSameTimeRes();
+
+
+
+    }
+
+    std::vector<int> getAssignedPeriods(int index_offset, std::shared_ptr<Solver> solver){
+        std::vector<int> to_return;
+        for(int i = index_offset; i < index_offset+100; i++){
+            if(solver->get_val_lit(i)> 0) {
+                int slot = (solver->get_val_lit(i) - (index_offset - 1))-1;
+                to_return.emplace_back(slot);
+            }
+        }
+        return to_return;
     }
 
 
