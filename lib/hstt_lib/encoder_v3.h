@@ -60,6 +60,7 @@ public: EncoderV3(
 
                     all_solvers.push_back(std::make_shared<Solver>());
                     std::shared_ptr<Solver> s = all_solvers[all_solvers.size()-1];
+                    s->setResource(tmp->getId());
                     std::vector<Event*> associatedEvents = getEvents(tmp->getClashingEvents());
                     std::map<int, std::vector<int>> same_time;
                     for (auto & event: associatedEvents){
@@ -108,11 +109,10 @@ public: EncoderV3(
                             }
 
                             std::cout<< "]}," << std::endl;
-                            assert(allocated_slots.size() == ev->getDuration());
+                            assert(allocated_slot_id.size() == ev->getDuration());
                         }
                         printer.print();
                     }
-                    all_solvers.emplace_back(s);
                 }
             }
         }
@@ -141,8 +141,19 @@ public: EncoderV3(
                                                                                (int) r.getSizeOfGroup(z.first))
                                 +" events\n";
                         std::cout << to_print;
-                        resolveOverBooking(*next(y.second.begin(),0),y.first);
-
+                        int initial_index = 0;
+                        bool result = false;
+                        while(!result && initial_index < y.second.size()){
+                            std::string event = *next(y.second.begin(),initial_index);
+                            std::cout << "Attempting to reschedule " << event << std::endl;
+                            result = resolveOverBooking(event,y.first);
+                            initial_index++;
+                        }
+                        if(!result){
+                            std::cout << "All of our attempts failed to reschedule any of the conflicting events" << std::endl;
+                        } else {
+                            std::cout << "Succesfully updated schedule" << std::endl;
+                        }
                     }
                 }
             }
@@ -165,12 +176,17 @@ public: EncoderV3(
      * @param event
      */
 
-    void resolveOverBooking(std::string event, int period_to_unschedule){
+    bool resolveOverBooking(std::string event, int period_to_unschedule){
         Event & event2 = e.getEvent(event);
         std::string res = event2.getResourceId();
         int solver_index = event2.getSolverIndex();
         Resource * resource  = r.getPrt(res);
         std::shared_ptr<Solver> s = all_solvers[solver_index];
+        for (auto &x : all_solvers){
+            std::cout << x->getResource() << std::endl;
+        }
+        std::cout << resource->getId() << " " << s->getResource() << std::endl;
+        assert(resource->getId() == s->getResource());
         std::vector<Event*> associatedEvents = getEvents(resource->getClashingEvents());
 
         for(auto &_ :associatedEvents){
@@ -184,18 +200,31 @@ public: EncoderV3(
             }
         }
         int block = event2.getIndexOffset()+ period_to_unschedule;
-        s->assume(-block);
-        s->solve();
-        for(auto &re: associatedEvents){
-            int offset_index = re->getIndexOffset();
-            std::string pref = re->getPrefferedRes();
+        s->add_soft(block, 69);
+        //s->assume(-block);
+        bool result = s->solve();
+        if(result){
+            PrintSchedule printer(res);
+            std::cout << "There are " << s->getClauseSet().size() << std::endl;
+            for(auto &re: associatedEvents){
+                int offset_index = re->getIndexOffset();
+                std::string pref = re->getPrefferedRes();
 
-            auto assigned_slots = getAssignedPeriods(offset_index, s);
-            for(auto &l : assigned_slots){
-                SameTimeSameDeptRes[pref][l].insert(re->getId());
+                auto assigned_slots = getAssignedPeriods(offset_index, s);
+                printer.add_course(re->getId(), assigned_slots);
+                for(auto &l : assigned_slots){
+                    std::cout << l << " ";
+                    SameTimeSameDeptRes[pref][l].insert(re->getId());
+                }
+                std::cout << std::endl;
             }
+            printer.print();
+            printSameTimeRes();
+        } else {
+
         }
-        printSameTimeRes();
+        return result;
+
 
 
 
