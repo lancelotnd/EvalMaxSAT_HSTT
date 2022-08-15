@@ -32,6 +32,7 @@ class EncoderV3 {
     int nb_clauses = 0;
     std::map<std::string, std::map<int, std::set<std::string>>> SameTimeSameDeptRes;
     std::vector<std::shared_ptr<Solver>> all_solvers;
+    std::map<std::string, std::shared_ptr<Solver>> map_solvers;
 
 
 
@@ -57,9 +58,8 @@ public: EncoderV3(
                 if(!tmp->getClashingEvents().empty()){
                     tmp->printResource();
 
-
-                    all_solvers.push_back(std::make_shared<Solver>());
-                    std::shared_ptr<Solver> s = all_solvers[all_solvers.size()-1];
+                    map_solvers[tmp->getId()] =std::make_shared<Solver>();
+                    std::shared_ptr<Solver> s = map_solvers[tmp->getId()];
                     s->setResource(tmp->getId());
                     std::vector<Event*> associatedEvents = getEvents(tmp->getClashingEvents());
                     std::map<int, std::vector<int>> same_time;
@@ -103,12 +103,6 @@ public: EncoderV3(
                                 }
                             }
                             printer.add_course(ev->getId(), allocated_slot_id);
-                            std::cout << "{\"" << ev->getId() << "\": [";
-                            for(auto a: allocated_slot_id){
-                                std::cout << a << ", ";
-                            }
-
-                            std::cout<< "]}," << std::endl;
                             assert(allocated_slot_id.size() == ev->getDuration());
                         }
                         printer.print();
@@ -119,52 +113,68 @@ public: EncoderV3(
         printSameTimeRes();
     }
 
+    /**
+     * Structure de données qui énumère {
+     *
+     */
+
 
     void printSameTimeRes(){
+
+        std::set<std::string> test = {"un","deux"};
+        test.erase("deux");
+
+        assert(test.size() == 1);
         std::vector<std::string> color_code = {"\033[1;41m", "\033[1;42m", "\033[1;43m", "\033[1;44m", "\033[1;45m", "\033[1;46m", "\033[1;47m"};
         for(auto z:SameTimeSameDeptRes){
-            bool over_booked = false;
-            std::string to_print = "";
+            bool conflict = true;
             int nb_periods = 0;
-            for(auto &y: z.second){
-                if(!y.second.empty()){
-                    if((int) r.getSizeOfGroup(z.first) >= (int) y.second.size()){
-                    } else {
-                        nb_periods++;
-                        over_booked = true;
-                        to_print += color_code[0] + "Period " + std::to_string(y.first)
-                                + "\033[0m is overbooked. NB EVENTS = "
-                                + std::to_string(y.second.size()) + " CAPACITY : "
-                                + std::to_string((int) r.getSizeOfGroup(z.first))
-                                + "\nWe need to reschedule "
-                                + std::to_string((int) y.second.size() -
-                                                                               (int) r.getSizeOfGroup(z.first))
-                                +" events\n";
-                        std::cout << to_print;
-                        int initial_index = 0;
-                        bool result = false;
-                        while(!result && initial_index < y.second.size()){
-                            std::string event = *next(y.second.begin(),initial_index);
+            while(conflict) {
+                std::string to_print = "";
+                for(auto &y: z.second){
+                    if(!y.second.empty()){
+                        if((int) r.getSizeOfGroup(z.first) >= (int) y.second.size()){
+                            conflict = false;
+                        } else {
+                            nb_periods++;
+                            conflict = true;
+                            to_print += color_code[0] + "Period " + std::to_string(y.first)
+                                        + "\033[0m is overbooked. NB EVENTS = "
+                                        + std::to_string(y.second.size()) + " CAPACITY : "
+                                        + std::to_string((int) r.getSizeOfGroup(z.first))
+                                        + "\nWe need to reschedule "
+                                        + std::to_string((int) y.second.size() -
+                                                         (int) r.getSizeOfGroup(z.first))
+                                        +" events\n";
+                            std::cout << to_print;
+                            bool result = false;
+                            std::string event = *next(y.second.begin(),0);
                             std::cout << "Attempting to reschedule " << event << std::endl;
                             result = resolveOverBooking(event,y.first);
-                            initial_index++;
-                        }
-                        if(!result){
-                            std::cout << "All of our attempts failed to reschedule any of the conflicting events" << std::endl;
-                        } else {
-                            std::cout << "Succesfully updated schedule" << std::endl;
+
+                            if(!result){
+                                std::cout << "All of our attempts failed to reschedule any of the conflicting events" << std::endl;
+                            } else {
+                                std::cout << "Succesfully updated schedule" << std::endl;
+                            }
+                            if(conflict) break;
+
                         }
                     }
+                    if(conflict) break;
+                }
+                if(conflict) {
+                    std::cout << color_code[0] << z.first << " are overbooked "  << std::endl;
+                    std::cout << to_print;
+                } else {
+                    std::cout << color_code[1]
+                              << z.first << " can accomodate the current schedule without conflicts\033[0m"
+                              << std::endl << std::endl;
                 }
             }
-            if(over_booked) {
-                std::cout << color_code[0] << z.first << " are overbooked " << nb_periods << "% of the time" << std::endl;
-                std::cout << to_print;
-            } else {
-                std::cout << color_code[1] << z.first << " can accomodate the current schedule without conflicts\033[0m"
-                << std::endl << std::endl;
+
             }
-        }
+
     }
 
     /**
@@ -177,60 +187,59 @@ public: EncoderV3(
      */
 
     bool resolveOverBooking(std::string event, int period_to_unschedule){
-        Event & event2 = e.getEvent(event);
-        std::string res = event2.getResourceId();
-        int solver_index = event2.getSolverIndex();
+        Event & currentEvent = e.getEvent(event);
+        std::string res = currentEvent.getResourceId();
         Resource * resource  = r.getPrt(res);
-        std::shared_ptr<Solver> s = all_solvers[solver_index];
-        for (auto &x : all_solvers){
-            std::cout << x->getResource() << std::endl;
-        }
-        std::cout << resource->getId() << " " << s->getResource() << std::endl;
-        assert(resource->getId() == s->getResource());
+
+        std::cout << resource->getId() << " " << map_solvers[res]->getResource() << std::endl;
+        assert(resource->getId() == map_solvers[res]->getResource());
         std::vector<Event*> associatedEvents = getEvents(resource->getClashingEvents());
+        int block = currentEvent.getIndexOffset() + period_to_unschedule;
+        std::cout << "Blocked "<< block << std::endl;
+        map_solvers[res]->assume(-block);
 
         for(auto &_ :associatedEvents){
             if(_->getPrefferedRes()!= ""){
                 auto pref = _->getPrefferedRes();
                 int offset_index = _->getIndexOffset();
-                auto assigned_slots = getAssignedPeriods(offset_index, s);
+                auto assigned_slots = getAssignedPeriods(offset_index, map_solvers[res], "");
+                std::cout <<"Before deletion ";
+                for (auto v: SameTimeSameDeptRes[pref][period_to_unschedule] ){
+                    std::cout << v << " ";
+                }_->getId();
                 for(auto &l : assigned_slots){
                     SameTimeSameDeptRes[pref][l].erase(_->getId());
                 }
+                std::cout << "After deletion : ";
+                for (auto v: SameTimeSameDeptRes[pref][period_to_unschedule]){
+                    std::cout << v << " ";
+                }
+                std::cout << std::endl;
+
             }
         }
-        int block = event2.getIndexOffset()+ period_to_unschedule;
-        s->add_soft(block, 69);
-        //s->assume(-block);
-        bool result = s->solve();
+        bool result = map_solvers[res]->solve();
         if(result){
             PrintSchedule printer(res);
-            std::cout << "There are " << s->getClauseSet().size() << std::endl;
             for(auto &re: associatedEvents){
                 int offset_index = re->getIndexOffset();
                 std::string pref = re->getPrefferedRes();
-
-                auto assigned_slots = getAssignedPeriods(offset_index, s);
+                auto assigned_slots = getAssignedPeriods(offset_index, map_solvers[res],  re->getId());
+                std::cout << re->getId() << " ";
                 printer.add_course(re->getId(), assigned_slots);
                 for(auto &l : assigned_slots){
-                    std::cout << l << " ";
-                    SameTimeSameDeptRes[pref][l].insert(re->getId());
+                    //std::cout << l << " ";
+                    //SameTimeSameDeptRes[pref][l].insert(re->getId());
                 }
                 std::cout << std::endl;
             }
             printer.print();
-            printSameTimeRes();
         } else {
-
         }
         return result;
-
-
-
-
     }
 
-    std::vector<int> getAssignedPeriods(int index_offset, std::shared_ptr<Solver> solver){
+    std::vector<int> getAssignedPeriods(int index_offset, std::shared_ptr<Solver> solver, std::string ev){
         std::vector<int> to_return;
         for(int i = index_offset; i < index_offset+100; i++){
             if(solver->get_val_lit(i)> 0) {
@@ -240,7 +249,6 @@ public: EncoderV3(
         }
         return to_return;
     }
-
 
         std::vector<Event*> getEvents(std::set<std::string> events){
             std::vector<Event*> to_return;
@@ -292,7 +300,6 @@ public: EncoderV3(
                             ev->addPreferResourceConstraint(resource_groups[0]);
                         }
                     }
-
                 }
             }
         }

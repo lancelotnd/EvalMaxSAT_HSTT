@@ -12,8 +12,8 @@ public:   explicit PrintSchedule(std::string teacher_name) {
             }
 
     void add_course(std::string course_name, std::vector<int> course_schedule) {
-        if(course_name.size() > max_length){
-            max_length = course_name.size();
+        if(course_name.size() + 4 > max_length){
+            max_length = course_name.size() + 4;
             fill_line();
         }
         schedule[course_name] = course_schedule;
@@ -39,9 +39,10 @@ public:   explicit PrintSchedule(std::string teacher_name) {
             for(auto l : k.second){
 
                 if(previous < l-1 || l%20 ==0){
-                    output[l] = padText(color, k.first);
+                    std::string text = num2string(l) + " "+k.first;
+                    output[l] = padText(color, text);
                 } else {
-                    output[l] = padText(color, "");
+                    output[l] = padText(color, num2string(l) + " ");
                 }
                 previous= l;
             }
@@ -53,6 +54,14 @@ public:   explicit PrintSchedule(std::string teacher_name) {
         }
 
 
+    }
+
+    std::string num2string(int num){
+        std::string to_return = "";
+        to_return += std::to_string(num);
+        if( to_return.size() ==1) to_return = " "+ to_return;
+        if( to_return.size() ==2) to_return = " "+ to_return;
+        return to_return;
     }
 
     std::string padText(int color, std::string text){
