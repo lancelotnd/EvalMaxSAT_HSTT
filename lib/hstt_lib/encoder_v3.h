@@ -126,7 +126,7 @@ public: EncoderV3(
 
         assert(test.size() == 1);
         std::vector<std::string> color_code = {"\033[1;41m", "\033[1;42m", "\033[1;43m", "\033[1;44m", "\033[1;45m", "\033[1;46m", "\033[1;47m"};
-        for(auto z:SameTimeSameDeptRes){
+        for(auto &z:SameTimeSameDeptRes){
             bool conflict = true;
             int nb_periods = 0;
             while(conflict) {
@@ -165,7 +165,6 @@ public: EncoderV3(
                 }
                 if(conflict) {
                     std::cout << color_code[0] << z.first << " are overbooked "  << std::endl;
-                    std::cout << to_print;
                 } else {
                     std::cout << color_code[1]
                               << z.first << " can accomodate the current schedule without conflicts\033[0m"
@@ -203,24 +202,12 @@ public: EncoderV3(
                 auto pref = _->getPrefferedRes();
                 int offset_index = _->getIndexOffset();
                 auto assigned_slots = getAssignedPeriods(offset_index, map_solvers[res], "");
-                std::cout <<"Before deletion ";
-                for (auto v: SameTimeSameDeptRes[pref][period_to_unschedule] ){
-                    std::cout << v << " ";
-                }
-
-
                 for(auto &l : assigned_slots){
                     if(SameTimeSameDeptRes[pref][l].find(_->getId()) == SameTimeSameDeptRes[pref][l].end()){
                         assert(!"removing something that doesnt exist");
                     }
                     SameTimeSameDeptRes[pref][l].erase(_->getId());
                 }
-                std::cout << "After deletion : ";
-                for (auto v: SameTimeSameDeptRes[pref][period_to_unschedule]){
-                    std::cout << v << " ";
-                }
-                std::cout << std::endl;
-
             }
         }
         bool result = map_solvers[res]->solve();
@@ -233,8 +220,7 @@ public: EncoderV3(
                 std::cout << re->getId() << " ";
                 printer.add_course(re->getId(), assigned_slots);
                 for(auto &l : assigned_slots){
-                    //std::cout << l << " ";
-                    //SameTimeSameDeptRes[pref][l].insert(re->getId());
+                    SameTimeSameDeptRes[pref][l].insert(re->getId());
                 }
                 std::cout << std::endl;
             }
