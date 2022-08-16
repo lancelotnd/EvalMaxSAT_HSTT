@@ -206,8 +206,13 @@ public: EncoderV3(
                 std::cout <<"Before deletion ";
                 for (auto v: SameTimeSameDeptRes[pref][period_to_unschedule] ){
                     std::cout << v << " ";
-                }_->getId();
+                }
+
+
                 for(auto &l : assigned_slots){
+                    if(!SameTimeSameDeptRes[pref][l].contains(_->getId())){
+                        assert(!"removing something that doesnt exist");
+                    }
                     SameTimeSameDeptRes[pref][l].erase(_->getId());
                 }
                 std::cout << "After deletion : ";
