@@ -160,6 +160,8 @@ public: EncoderV3(
                             if(conflict) break;
 
                         }
+                    } else {
+                        conflict = false;
                     }
                     if(conflict) break;
                 }
@@ -171,8 +173,9 @@ public: EncoderV3(
                               << std::endl << std::endl;
                 }
             }
+        }
 
-            }
+        std::cout << "finished fixing room conflicts." << std::endl;
 
     }
 

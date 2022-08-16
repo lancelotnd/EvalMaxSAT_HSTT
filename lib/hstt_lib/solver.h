@@ -9,6 +9,7 @@ void * solver;
 ClauseSet clauses;
 bool is_sat = false;
 std::string resource_id;
+std::vector<int> assumptions;
 
 public:   Solver(){
         solver = ipamir_init();
@@ -21,6 +22,9 @@ public:   Solver(){
                 ipamir_add_hard(solver, l);
             }
             ipamir_add_hard(solver,0);
+        }
+        for(auto &a:assumptions){
+            ipamir_assume(solver, a);
         }
         int result = ipamir_solve(solver);
         is_sat = result == 30;
@@ -52,7 +56,7 @@ public:   Solver(){
 
     void assume(int lit)
     {
-        ipamir_assume(solver,lit);
+        assumptions.emplace_back(lit);
     }
 
     void setResource(std::string res)
