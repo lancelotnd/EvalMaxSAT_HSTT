@@ -210,7 +210,7 @@ public: EncoderV3(
 
 
                 for(auto &l : assigned_slots){
-                    if(!SameTimeSameDeptRes[pref][l].contains(_->getId())){
+                    if(SameTimeSameDeptRes[pref][l].find(_->getId()) == SameTimeSameDeptRes[pref][l].end()){
                         assert(!"removing something that doesnt exist");
                     }
                     SameTimeSameDeptRes[pref][l].erase(_->getId());
