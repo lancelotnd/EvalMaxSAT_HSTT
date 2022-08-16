@@ -8,6 +8,8 @@ public: static inline int toplit{0};
 void * solver;
 ClauseSet clauses;
 bool is_sat = false;
+std::string resource_id;
+std::vector<int> assumptions;
 
 public:   Solver(){
         solver = ipamir_init();
@@ -20,6 +22,9 @@ public:   Solver(){
                 ipamir_add_hard(solver, l);
             }
             ipamir_add_hard(solver,0);
+        }
+        for(auto &a:assumptions){
+            ipamir_assume(solver, a);
         }
         int result = ipamir_solve(solver);
         is_sat = result == 30;
@@ -44,9 +49,24 @@ public:   Solver(){
         kmto_encode_atmostN(toplit, clauses, constraint, n);
     }
 
-    void add_soft(int lit, int weight){
+    void add_soft(int lit, int weight)
+    {
         ipamir_add_soft_lit(solver,lit,weight);
     }
+
+    void assume(int lit)
+    {
+        assumptions.emplace_back(lit);
+    }
+
+    void setResource(std::string res)
+    {
+        resource_id = res;
+    }
+    std::string getResource(){
+        return resource_id;
+    }
+
 
 
     ClauseSet& getClauseSet(){

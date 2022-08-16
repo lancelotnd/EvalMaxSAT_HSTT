@@ -74,6 +74,9 @@ public:
     int getDuration(){
         return duration;
     }
+    int getSolverIndex() const {
+        return solver_index;
+    }
 
     Event() {
     }
@@ -170,6 +173,10 @@ public:
 
     std::string getPrefferedRes() const {
         return pref_resource_group;
+    }
+
+    std::string getResourceId() const {
+        return main_resource;
     }
 
     int getIndexOffset()  {
