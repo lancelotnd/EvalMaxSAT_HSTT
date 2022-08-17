@@ -120,11 +120,6 @@ public: EncoderV3(
 
 
     void printSameTimeRes(){
-
-        std::set<std::string> test = {"un","deux"};
-        test.erase("deux");
-
-        assert(test.size() == 1);
         std::vector<std::string> color_code = {"\033[1;41m", "\033[1;42m", "\033[1;43m", "\033[1;44m", "\033[1;45m", "\033[1;46m", "\033[1;47m"};
         for(auto &z:SameTimeSameDeptRes){
             bool conflict = true;
@@ -192,12 +187,8 @@ public: EncoderV3(
         Event & currentEvent = e.getEvent(event);
         std::string res = currentEvent.getResourceId();
         Resource * resource  = r.getPrt(res);
-
-        std::cout << resource->getId() << " " << map_solvers[res]->getResource() << std::endl;
-        assert(resource->getId() == map_solvers[res]->getResource());
         std::vector<Event*> associatedEvents = getEvents(resource->getClashingEvents());
         int block = currentEvent.getIndexOffset() + period_to_unschedule;
-        std::cout << "Blocked "<< block << std::endl;
         map_solvers[res]->assume(-block);
 
         for(auto &_ :associatedEvents){
@@ -206,9 +197,6 @@ public: EncoderV3(
                 int offset_index = _->getIndexOffset();
                 auto assigned_slots = getAssignedPeriods(offset_index, map_solvers[res], "");
                 for(auto &l : assigned_slots){
-                    if(SameTimeSameDeptRes[pref][l].find(_->getId()) == SameTimeSameDeptRes[pref][l].end()){
-                        assert(!"removing something that doesnt exist");
-                    }
                     SameTimeSameDeptRes[pref][l].erase(_->getId());
                 }
             }
@@ -220,15 +208,12 @@ public: EncoderV3(
                 int offset_index = re->getIndexOffset();
                 std::string pref = re->getPrefferedRes();
                 auto assigned_slots = getAssignedPeriods(offset_index, map_solvers[res],  re->getId());
-                std::cout << re->getId() << " ";
                 printer.add_course(re->getId(), assigned_slots);
                 for(auto &l : assigned_slots){
                     SameTimeSameDeptRes[pref][l].insert(re->getId());
                 }
-                std::cout << std::endl;
             }
             printer.print();
-        } else {
         }
         return result;
     }
@@ -289,7 +274,7 @@ public: EncoderV3(
                     }
                     else if(resource_groups.size() > 1){
                         assert(!"TODO: Implement preferences for multiple resource groups.");
-                    }else {
+                    } else {
                         for(auto ev: applied_events){
                             ev->addPreferResourceConstraint(resource_groups[0]);
                         }
