@@ -23,13 +23,13 @@
 #include "print_schedule.h"
 #include "solver.h"
 #include <memory>
+#include "dept_graph.h"
 
 class EncoderV3 {
     Times& t;
     Resources& r;
     Events& e;
     Constraints& c;
-    int nb_clauses = 0;
     std::map<std::string, std::map<int, std::set<std::string>>> SameTimeSameDeptRes;
     std::vector<std::shared_ptr<Solver>> all_solvers;
     std::map<std::string, std::shared_ptr<Solver>> map_solvers;
@@ -41,11 +41,10 @@ public: EncoderV3(
         Resources &r,
         Events &e,
         Constraints &c) : c(c), r(r), e(e), t(t){
-        std::cout << "c Constructed Encoder V3" << std::endl;
     }
 
         void encode() {
-
+        DeptGraph d;
         std::map<std::string, int> starting_index_for_event;
         std::vector<int> allTimes;
         propagate_constraints();
@@ -63,7 +62,10 @@ public: EncoderV3(
                     s->setResource(tmp->getId());
                     std::vector<Event*> associatedEvents = getEvents(tmp->getClashingEvents());
                     std::map<int, std::vector<int>> same_time;
+                    std::set<std::string> pref_departments;
+
                     for (auto & event: associatedEvents){
+                        pref_departments.insert(event->getPrefferedRes());
                         int frozen_top_lit = Solver::toplit;
                         std::vector<int> this_resource_times;
                         starting_index_for_event[event->getId()] = Solver::toplit+1;
@@ -76,6 +78,7 @@ public: EncoderV3(
                         allTimes_for_resources.insert(allTimes_for_resources.end(), this_resource_times.begin(), this_resource_times.end());
                         event->AssignTimes(t, this_resource_times, Solver::toplit, s->getClauseSet(), s, all_solvers.size()-1);
                     }
+                    d.connectNeighbors(tmp->getId(),pref_departments);
                     for(auto index: same_time){
                         mto_encode_atmostN(Solver::toplit, s->getClauseSet(),index.second,1);
                     }
@@ -112,12 +115,6 @@ public: EncoderV3(
         }
         printSameTimeRes();
     }
-
-    /**
-     * Structure de données qui énumère {
-     *
-     */
-
 
     void printSameTimeRes(){
         std::vector<std::string> color_code = {"\033[1;41m", "\033[1;42m", "\033[1;43m", "\033[1;44m", "\033[1;45m", "\033[1;46m", "\033[1;47m"};
@@ -192,10 +189,10 @@ public: EncoderV3(
         map_solvers[res]->assume(-block);
 
         for(auto &_ :associatedEvents){
-            if(_->getPrefferedRes()!= ""){
+            if(_->getPrefferedRes().empty()){
                 auto pref = _->getPrefferedRes();
                 int offset_index = _->getIndexOffset();
-                auto assigned_slots = getAssignedPeriods(offset_index, map_solvers[res], "");
+                auto assigned_slots = getAssignedPeriods(offset_index, map_solvers[res]);
                 for(auto &l : assigned_slots){
                     SameTimeSameDeptRes[pref][l].erase(_->getId());
                 }
@@ -207,7 +204,7 @@ public: EncoderV3(
             for(auto &re: associatedEvents){
                 int offset_index = re->getIndexOffset();
                 std::string pref = re->getPrefferedRes();
-                auto assigned_slots = getAssignedPeriods(offset_index, map_solvers[res],  re->getId());
+                auto assigned_slots = getAssignedPeriods(offset_index, map_solvers[res]);
                 printer.add_course(re->getId(), assigned_slots);
                 for(auto &l : assigned_slots){
                     SameTimeSameDeptRes[pref][l].insert(re->getId());
@@ -218,7 +215,7 @@ public: EncoderV3(
         return result;
     }
 
-    std::vector<int> getAssignedPeriods(int index_offset, std::shared_ptr<Solver> solver, std::string ev){
+    std::vector<int> getAssignedPeriods(int index_offset, std::shared_ptr<Solver> solver){
         std::vector<int> to_return;
         for(int i = index_offset; i < index_offset+100; i++){
             if(solver->get_val_lit(i)> 0) {

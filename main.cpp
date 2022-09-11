@@ -1,7 +1,6 @@
 #include "lib/pugixml-1.12/src/pugixml.hpp"
 #include <iostream>
 #include <cassert>
-#include "lib/hstt_lib/dept_graph.h"
 #include "lib/hstt_lib/Times.h"
 #include "lib/hstt_lib/Resources.h"
 #include "lib/hstt_lib/Events.h"
@@ -9,7 +8,7 @@
 #include "lib/hstt_lib/encoder_v3.h"
 
 int main(int argc, char** argv)
-{#include <string.h>
+{
 
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file(argv[1]);
