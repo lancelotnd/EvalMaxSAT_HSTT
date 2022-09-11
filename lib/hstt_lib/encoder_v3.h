@@ -21,7 +21,7 @@
 #include "../pysat/cardenc/mto.hh"
 #include "../../ipamir.h"
 #include "print_schedule.h"
-#include "solver.h"
+#include "meta_solver.h"
 #include <memory>
 #include "dept_graph.h"
 
@@ -30,11 +30,7 @@ class EncoderV3 {
     Resources& r;
     Events& e;
     Constraints& c;
-    std::map<std::string, std::map<int, std::set<std::string>>> SameTimeSameDeptRes;
-    std::vector<std::shared_ptr<Solver>> all_solvers;
-    std::map<std::string, std::shared_ptr<Solver>> map_solvers;
-
-
+    MetaSolver meta_solver;
 
 public: EncoderV3(
         Times &t,
@@ -56,9 +52,11 @@ public: EncoderV3(
 
                 if(!tmp->getClashingEvents().empty()){
                     tmp->printResource();
-
-                    map_solvers[tmp->getId()] =std::make_shared<Solver>();
-                    std::shared_ptr<Solver> s = map_solvers[tmp->getId()];
+                    ///////////////////////////////////////////////
+                    meta_solver.add_solver(tmp->getId());
+                    //map_solvers[tmp->getId()] =std::make_shared<Solver>();
+                    std::shared_ptr<Solver> s = meta_solver[tmp->getId()];
+                    ///////////////////////////////////////////////
                     s->setResource(tmp->getId());
                     std::vector<Event*> associatedEvents = getEvents(tmp->getClashingEvents());
                     std::map<int, std::vector<int>> same_time;
@@ -76,7 +74,7 @@ public: EncoderV3(
                             Solver::toplit = i+1;
                         }
                         allTimes_for_resources.insert(allTimes_for_resources.end(), this_resource_times.begin(), this_resource_times.end());
-                        event->AssignTimes(t, this_resource_times, Solver::toplit, s->getClauseSet(), s, all_solvers.size()-1);
+                        event->AssignTimes(t, this_resource_times, Solver::toplit, s->getClauseSet(), s);
                     }
                     d.connectNeighbors(tmp->getId(),pref_departments);
                     for(auto index: same_time){
@@ -98,8 +96,8 @@ public: EncoderV3(
                             for( int i = index_offset; i< index_offset+100; i++) {
                                 if (s->get_val_lit(i) > 0) {
                                     int slot = s->get_val_lit(i) - (index_offset - 1);
-                                    if(ev->getPrefferedRes() != "") {
-                                        SameTimeSameDeptRes[ev->getPrefferedRes()][slot-1].insert(ev->getId());
+                                    if(!ev->getPrefferedRes().empty()) {
+                                        meta_solver.stsdr()[ev->getPrefferedRes()][slot-1].insert(ev->getId());
                                     }
                                     allocated_slot_id.push_back(slot-1);
                                     allocated_slots.push_back(t[slot - 1].getId());
@@ -118,7 +116,7 @@ public: EncoderV3(
 
     void printSameTimeRes(){
         std::vector<std::string> color_code = {"\033[1;41m", "\033[1;42m", "\033[1;43m", "\033[1;44m", "\033[1;45m", "\033[1;46m", "\033[1;47m"};
-        for(auto &z:SameTimeSameDeptRes){
+        for(auto &z:meta_solver.stsdr()){
             bool conflict = true;
             int nb_periods = 0;
             while(conflict) {
@@ -186,28 +184,29 @@ public: EncoderV3(
         Resource * resource  = r.getPrt(res);
         std::vector<Event*> associatedEvents = getEvents(resource->getClashingEvents());
         int block = currentEvent.getIndexOffset() + period_to_unschedule;
-        map_solvers[res]->assume(-block);
+        meta_solver[res]->assume(-block);
+        //map_solvers[res]->assume(-block);
 
         for(auto &_ :associatedEvents){
             if(_->getPrefferedRes().empty()){
                 auto pref = _->getPrefferedRes();
                 int offset_index = _->getIndexOffset();
-                auto assigned_slots = getAssignedPeriods(offset_index, map_solvers[res]);
+                auto assigned_slots = getAssignedPeriods(offset_index, meta_solver[res]);
                 for(auto &l : assigned_slots){
-                    SameTimeSameDeptRes[pref][l].erase(_->getId());
+                    meta_solver.stsdr()[pref][l].erase(_->getId());
                 }
             }
         }
-        bool result = map_solvers[res]->solve();
+        bool result = meta_solver[res]->solve();
         if(result){
             PrintSchedule printer(res);
             for(auto &re: associatedEvents){
                 int offset_index = re->getIndexOffset();
                 std::string pref = re->getPrefferedRes();
-                auto assigned_slots = getAssignedPeriods(offset_index, map_solvers[res]);
+                auto assigned_slots = getAssignedPeriods(offset_index, meta_solver[res]);
                 printer.add_course(re->getId(), assigned_slots);
                 for(auto &l : assigned_slots){
-                    SameTimeSameDeptRes[pref][l].insert(re->getId());
+                    meta_solver.stsdr()[pref][l].insert(re->getId());
                 }
             }
             printer.print();

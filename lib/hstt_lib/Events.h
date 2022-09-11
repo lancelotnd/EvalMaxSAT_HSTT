@@ -83,7 +83,7 @@ public:
 
     ~Event(){}
 
-    void AssignTimes(Times &times, std::vector<int> &assignment, int& top_lit, ClauseSet &clauses, std::shared_ptr<Solver> s, int solver_index) {
+    void AssignTimes(Times &times, std::vector<int> &assignment, int& top_lit, ClauseSet &clauses, std::shared_ptr<Solver> s) {
         index_offset = assignment[0];
         //First there shall be exactly *n* periods allocated where *n* is the total event duration.
         kmto_encode_equalsN(top_lit, clauses, assignment, duration);
