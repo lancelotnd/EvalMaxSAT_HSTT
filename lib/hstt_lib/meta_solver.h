@@ -6,11 +6,17 @@
 */
 
 #include "solver.h"
+#include "Events.h"
+#include "Resources.h"
+
 
 class MetaSolver {
+    Resources& r;
+    Events& e;
+
     std::map<std::string, std::map<int, std::set<std::string>>> SameTimeSameDeptRes;
     std::map<std::string, int> groups_capacity;
-    int number_of_conflicts;
+    int number_of_conflicts = 0;
     std::map<std::string, std::vector<int>> conflicts;
     std::vector<std::shared_ptr<Solver>> all_solvers;
     std::map<std::string, std::shared_ptr<Solver>> map_solvers;
@@ -19,7 +25,26 @@ class MetaSolver {
 
 public:
 
-    MetaSolver(){}
+
+    MetaSolver(Events& e, Resources& r): e(e), r(r){
+
+    }
+
+    MetaSolver& operator=(const MetaSolver& other)
+    {
+        if(this == &other) return *this;
+        r = other.r;
+        e = other.e;
+        SameTimeSameDeptRes = other.SameTimeSameDeptRes;
+        groups_capacity = other.groups_capacity;
+        number_of_conflicts = other.number_of_conflicts;
+        conflicts = other.conflicts;
+        all_solvers = other.all_solvers;
+        map_solvers = other.map_solvers;
+        global_objective = other.global_objective;
+
+        return *this;
+    }
 
     void add_solver(std::string solver_id){
         map_solvers[solver_id] = std::make_shared<Solver>();
@@ -57,4 +82,10 @@ public:
     std::map<std::string, std::map<int, std::set<std::string>>> & stsdr(){
         return SameTimeSameDeptRes;
     }
+
+
+    void clearGroupsOfSolver(std::string solver){
+
+    }
+
 };

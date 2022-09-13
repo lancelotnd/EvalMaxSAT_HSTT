@@ -30,16 +30,15 @@ class EncoderV3 {
     Resources& r;
     Events& e;
     Constraints& c;
-    MetaSolver meta_solver;
 
-public: EncoderV3(
-        Times &t,
-        Resources &r,
-        Events &e,
-        Constraints &c) : c(c), r(r), e(e), t(t){
+public: EncoderV3(Times &t, Resources &r, Events &e, Constraints &c)
+            : c(c), r(r), e(e), t(t) {
+
+
     }
 
         void encode() {
+        MetaSolver meta_solver = MetaSolver(e,r);
         std::set<std::string> pref_departments;
         DeptGraph d;
         std::map<std::string, int> starting_index_for_event;
@@ -110,19 +109,19 @@ public: EncoderV3(
             }
         }
 
-        add_group_capacity(pref_departments);
+        add_group_capacity(pref_departments, meta_solver);
         meta_solver.output_stats();
     }
 
 
-    void add_group_capacity(std::set<std::string> all_groups){
+    void add_group_capacity(std::set<std::string> all_groups, MetaSolver& meta_solver){
         for(auto g:all_groups){
             int capacity = r.getSizeOfGroup(g);
             meta_solver.add_group_capacity(g, capacity);
         }
     }
 
-    void printSameTimeRes(){
+    void printSameTimeRes(MetaSolver &meta_solver){
         std::vector<std::string> color_code = {"\033[1;41m", "\033[1;42m", "\033[1;43m", "\033[1;44m", "\033[1;45m", "\033[1;46m", "\033[1;47m"};
         for(auto &z:meta_solver.stsdr()){
             bool conflict = true;
@@ -148,7 +147,7 @@ public: EncoderV3(
                             bool result = false;
                             std::string event = *next(y.second.begin(),0);
                             std::cout << "Attempting to reschedule " << event << std::endl;
-                            result = resolveOverBooking(event,y.first);
+                            result = resolveOverBooking(event,y.first, meta_solver);
 
                             if(!result){
                                 std::cout << "All of our attempts failed to reschedule any of the conflicting events" << std::endl;
@@ -186,7 +185,7 @@ public: EncoderV3(
      * @param event
      */
 
-    bool resolveOverBooking(std::string event, int period_to_unschedule){
+    bool resolveOverBooking(std::string event, int period_to_unschedule, MetaSolver &meta_solver){
         Event & currentEvent = e.getEvent(event);
         std::string res = currentEvent.getResourceId();
         Resource * resource  = r.getPrt(res);

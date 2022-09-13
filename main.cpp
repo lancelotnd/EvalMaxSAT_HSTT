@@ -21,7 +21,7 @@ int main(int argc, char** argv)
         Resources r = Resources(instance);
         Events e = Events(instance, r);
         Constraints c = Constraints(instance);
-        EncoderV3 encoder = EncoderV3(t,r,e,c);
+        EncoderV3 encoder = EncoderV3(t, r, e, c);
         encoder.encode();
     }
 
