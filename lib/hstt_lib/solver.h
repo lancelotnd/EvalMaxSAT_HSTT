@@ -67,6 +67,10 @@ public:   Solver(){
         return resource_id;
     }
 
+    int get_objective(){
+        return ipamir_val_obj(solver);
+    }
+
 
 
     ClauseSet& getClauseSet(){

@@ -40,6 +40,7 @@ public: EncoderV3(
     }
 
         void encode() {
+        std::set<std::string> pref_departments;
         DeptGraph d;
         std::map<std::string, int> starting_index_for_event;
         std::vector<int> allTimes;
@@ -54,13 +55,11 @@ public: EncoderV3(
                     tmp->printResource();
                     ///////////////////////////////////////////////
                     meta_solver.add_solver(tmp->getId());
-                    //map_solvers[tmp->getId()] =std::make_shared<Solver>();
                     std::shared_ptr<Solver> s = meta_solver[tmp->getId()];
                     ///////////////////////////////////////////////
                     s->setResource(tmp->getId());
                     std::vector<Event*> associatedEvents = getEvents(tmp->getClashingEvents());
                     std::map<int, std::vector<int>> same_time;
-                    std::set<std::string> pref_departments;
 
                     for (auto & event: associatedEvents){
                         pref_departments.insert(event->getPrefferedRes());
@@ -76,13 +75,12 @@ public: EncoderV3(
                         allTimes_for_resources.insert(allTimes_for_resources.end(), this_resource_times.begin(), this_resource_times.end());
                         event->AssignTimes(t, this_resource_times, Solver::toplit, s->getClauseSet(), s);
                     }
-                    d.connectNeighbors(tmp->getId(),pref_departments);
                     for(auto index: same_time){
                         mto_encode_atmostN(Solver::toplit, s->getClauseSet(),index.second,1);
                     }
 
 
-                    bool ret_code = s->solve();
+                    bool ret_code = meta_solver.solve(tmp->getId());
                     assert(ret_code);
                     if(ret_code){
                         PrintSchedule printer(tmp->getId());
@@ -111,7 +109,17 @@ public: EncoderV3(
                 }
             }
         }
-        printSameTimeRes();
+
+        add_group_capacity(pref_departments);
+        meta_solver.output_stats();
+    }
+
+
+    void add_group_capacity(std::set<std::string> all_groups){
+        for(auto g:all_groups){
+            int capacity = r.getSizeOfGroup(g);
+            meta_solver.add_group_capacity(g, capacity);
+        }
     }
 
     void printSameTimeRes(){
