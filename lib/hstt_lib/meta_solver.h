@@ -82,6 +82,29 @@ public:
         return SameTimeSameDeptRes;
     }
 
+    bool resolveOverBooking(std::string event, int period_to_unschedule, MetaSolver &meta_solver){
+        Event & currentEvent = e.getEvent(event);
+        std::string teacher_id = currentEvent.getResourceId();
+
+        erase_teacher_schedule(teacher_id);
+        block_conflict(teacher_id, event, period_to_unschedule);
+
+        //Pas oublier de supprimer le cout de ce solver du global objective avant de faire
+        //un nouveau solve.
+        bool result = meta_solver[teacher_id]->solve();
+        if(result){
+            update_teacher_schedule(teacher_id);
+        }
+        return result;
+    }
+
+    void block_conflict(std::string teacher_id, std::string event_id, int period_to_unschedule){
+        Event & currentEvent = e.getEvent(event_id);
+        int block = currentEvent.getIndexOffset() + period_to_unschedule;
+        map_solvers[teacher_id]->assume(-block);
+
+    }
+
 
 
     std::vector<int> getAssignedPeriods(int index_offset, std::shared_ptr<Solver> solver){
@@ -95,15 +118,52 @@ public:
         return to_return;
     }
 
-    void eraseTeacher(std::string teacher){
+    /**
+     * Remove all assigned schedule of a given teacher form the Stsdr map.
+     * @param teacher
+     */
+    void erase_teacher_schedule(std::string teacher_id){
+        Resource * resource  = r.getPrt(teacher_id);
+        std::vector<Event*> associatedEvents = getEvents(resource->getClashingEvents());
 
+        for(auto &event :associatedEvents){
+            if(! event->getPrefferedRes().empty()){
+                auto pref = event->getPrefferedRes();
+                int offset_index = event->getIndexOffset();
+                auto assigned_slots = getAssignedPeriods(offset_index, map_solvers[teacher_id]);
+                for(auto &l : assigned_slots){
+                    SameTimeSameDeptRes[pref][l].erase(event->getId());
+                }
+            }
+        }
     }
 
 
+    /**
+     * Reinserts the teacher schedule into the map stsdr.
+     * @param teacher_id
+     */
+    void update_teacher_schedule(std::string teacher_id){
+        Resource * resource  = r.getPrt(teacher_id);
+        std::vector<Event*> associatedEvents = getEvents(resource->getClashingEvents());
+
+        for(auto &event: associatedEvents){
+            int offset_index = event->getIndexOffset();
+            std::string pref = event->getPrefferedRes();
+            auto assigned_slots = getAssignedPeriods(offset_index, map_solvers[teacher_id]);
+            for(auto &l : assigned_slots){
+                SameTimeSameDeptRes[pref][l].insert(event->getId());
+            }
+        }
+    }
 
 
-    void clearGroupsOfSolver(std::string solver){
-
+    std::vector<Event*> getEvents(std::set<std::string> events){
+        std::vector<Event*> to_return;
+        for(auto & e_str: events){
+            to_return.push_back(&e.getEvent(e_str));
+        }
+        return to_return;
     }
 
 };
