@@ -42,7 +42,6 @@ public:
         all_solvers = other.all_solvers;
         map_solvers = other.map_solvers;
         global_objective = other.global_objective;
-
         return *this;
     }
 
@@ -82,6 +81,25 @@ public:
     std::map<std::string, std::map<int, std::set<std::string>>> & stsdr(){
         return SameTimeSameDeptRes;
     }
+
+
+
+    std::vector<int> getAssignedPeriods(int index_offset, std::shared_ptr<Solver> solver){
+        std::vector<int> to_return;
+        for(int i = index_offset; i < index_offset+100; i++){
+            if(solver->get_val_lit(i)> 0) {
+                int slot = (solver->get_val_lit(i) - (index_offset - 1))-1;
+                to_return.emplace_back(slot);
+            }
+        }
+        return to_return;
+    }
+
+    void eraseTeacher(std::string teacher){
+
+    }
+
+
 
 
     void clearGroupsOfSolver(std::string solver){

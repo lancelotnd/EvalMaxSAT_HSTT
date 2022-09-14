@@ -13,5 +13,5 @@ struct NodeConflict {
     int period;
     std::string teacher;
 
-    std::vector<void*> nevoidxt;
+    std::vector<NodeConflict*> children;
 };

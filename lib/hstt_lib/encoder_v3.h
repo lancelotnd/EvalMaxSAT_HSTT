@@ -33,8 +33,6 @@ class EncoderV3 {
 
 public: EncoderV3(Times &t, Resources &r, Events &e, Constraints &c)
             : c(c), r(r), e(e), t(t) {
-
-
     }
 
         void encode() {
@@ -110,6 +108,7 @@ public: EncoderV3(Times &t, Resources &r, Events &e, Constraints &c)
         }
 
         add_group_capacity(pref_departments, meta_solver);
+        printSameTimeRes(meta_solver);
         meta_solver.output_stats();
     }
 
@@ -195,7 +194,7 @@ public: EncoderV3(Times &t, Resources &r, Events &e, Constraints &c)
         //map_solvers[res]->assume(-block);
 
         for(auto &_ :associatedEvents){
-            if(_->getPrefferedRes().empty()){
+            if(! _->getPrefferedRes().empty()){
                 auto pref = _->getPrefferedRes();
                 int offset_index = _->getIndexOffset();
                 auto assigned_slots = getAssignedPeriods(offset_index, meta_solver[res]);
