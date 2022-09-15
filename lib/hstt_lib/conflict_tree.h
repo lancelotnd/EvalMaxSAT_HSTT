@@ -13,7 +13,7 @@ class NodeConflict {
     std::map<std::string, std::map<int, std::set<std::string>>> stsdr;
     std::vector<NodeConflict*> children;
 public:
-    NodteConflict(std::string group, int period, std::string teacher, int global_objective){
+    NodeConflict(std::string group, int period, std::string teacher, int global_objective){
         this->group = group;
         this->period = period;
         this->teacher = teacher;
