@@ -8,7 +8,7 @@
 #include "solver.h"
 #include "Events.h"
 #include "Resources.h"
-
+#include "conflict_tree.h"
 
 class MetaSolver {
     Resources& r;
@@ -86,14 +86,15 @@ public:
         Event & currentEvent = e.getEvent(event);
         std::string teacher_id = currentEvent.getResourceId();
 
-        erase_teacher_schedule(teacher_id);
+        //Replace stsdr by node map.
+        erase_teacher_schedule(teacher_id, SameTimeSameDeptRes);
         block_conflict(teacher_id, event, period_to_unschedule);
 
         //Pas oublier de supprimer le cout de ce solver du global objective avant de faire
         //un nouveau solve.
         bool result = meta_solver[teacher_id]->solve();
         if(result){
-            update_teacher_schedule(teacher_id);
+            update_teacher_schedule(teacher_id, SameTimeSameDeptRes);
         }
         return result;
     }
@@ -104,7 +105,6 @@ public:
         map_solvers[teacher_id]->assume(-block);
 
     }
-
 
 
     std::vector<int> getAssignedPeriods(int index_offset, std::shared_ptr<Solver> solver){
@@ -118,11 +118,33 @@ public:
         return to_return;
     }
 
+    void clear_all_assumptions()
+    {
+        for(auto &k : map_solvers) {
+            k.second->clear_assumptions();
+        }
+    }
+
+
+    void add_children(NodeConflict *root,  std::map<std::string, std::vector<int>> &map_conflicts,
+                      std::map<std::string, std::map<int, std::set<std::string>>> &stsdr,
+                      int &global_obj)
+   {
+        for(auto &group: map_conflicts){
+            std::string group_name = group.first;
+            for(auto &period : group.second){
+                for(auto &teacher : stsdr[group_name][period]){
+                    root->insert_child(new NodeConflict(group_name, period,teacher,global_objective));
+                }
+            }
+        }
+    }
+
     /**
      * Remove all assigned schedule of a given teacher form the Stsdr map.
      * @param teacher
      */
-    void erase_teacher_schedule(std::string teacher_id){
+    void erase_teacher_schedule(std::string teacher_id, std::map<std::string, std::map<int, std::set<std::string>>> &stsdr){
         Resource * resource  = r.getPrt(teacher_id);
         std::vector<Event*> associatedEvents = getEvents(resource->getClashingEvents());
 
@@ -132,7 +154,7 @@ public:
                 int offset_index = event->getIndexOffset();
                 auto assigned_slots = getAssignedPeriods(offset_index, map_solvers[teacher_id]);
                 for(auto &l : assigned_slots){
-                    SameTimeSameDeptRes[pref][l].erase(event->getId());
+                    stsdr[pref][l].erase(event->getId());
                 }
             }
         }
@@ -143,7 +165,7 @@ public:
      * Reinserts the teacher schedule into the map stsdr.
      * @param teacher_id
      */
-    void update_teacher_schedule(std::string teacher_id){
+    void update_teacher_schedule(std::string teacher_id,  std::map<std::string, std::map<int, std::set<std::string>>> &stsdr){
         Resource * resource  = r.getPrt(teacher_id);
         std::vector<Event*> associatedEvents = getEvents(resource->getClashingEvents());
 
@@ -152,7 +174,7 @@ public:
             std::string pref = event->getPrefferedRes();
             auto assigned_slots = getAssignedPeriods(offset_index, map_solvers[teacher_id]);
             for(auto &l : assigned_slots){
-                SameTimeSameDeptRes[pref][l].insert(event->getId());
+                stsdr[pref][l].insert(event->getId());
             }
         }
     }

@@ -59,6 +59,11 @@ public:   Solver(){
         assumptions.emplace_back(lit);
     }
 
+    void clear_assumptions()
+    {
+        assumptions.clear();
+    }
+
     void setResource(std::string res)
     {
         resource_id = res;
