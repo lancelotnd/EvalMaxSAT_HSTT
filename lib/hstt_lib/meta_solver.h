@@ -106,6 +106,15 @@ public:
 
     }
 
+    std::string get_event_id(int period, std::string teacher){
+        std::string event_id = "";
+        Resource* t = r.getPrt(teacher);
+        auto associated_events = getEvents(t->getClashingEvents());
+        for(auto &e :associated_events){
+            int index_offset = e->getIndexOffset();
+        }
+    }
+
 
     std::vector<int> getAssignedPeriods(int index_offset, std::shared_ptr<Solver> solver){
         std::vector<int> to_return;
@@ -116,6 +125,12 @@ public:
             }
         }
         return to_return;
+    }
+
+    void walk_tree(){
+        NodeConflict root("", 0, "", global_objective, SameTimeSameDeptRes,conflicts);
+        add_children(&root,conflicts,SameTimeSameDeptRes, global_objective);
+
     }
 
     void clear_all_assumptions()
@@ -134,10 +149,17 @@ public:
             std::string group_name = group.first;
             for(auto &period : group.second){
                 for(auto &teacher : stsdr[group_name][period]){
-                    root->insert_child(new NodeConflict(group_name, period,teacher,global_objective));
+                    root->insert_child(new NodeConflict(group_name, period,teacher,global_objective,stsdr, map_conflicts));
                 }
             }
         }
+    }
+
+    void solve_node(NodeConflict* node){
+        std::string teacher_id = node->get_teacher();
+        int period = node->get_period();
+        erase_teacher_schedule(teacher_id, node->get_stsdr());
+
     }
 
     /**
